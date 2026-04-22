@@ -5,7 +5,7 @@ import { requireAuth } from '@/lib/auth/guards';
 import { getAccount, isoToday } from '@/server/accounts';
 import { listPayees } from '@/server/payees';
 import { db } from '@/db/client';
-import { transactions } from '@/db/schema';
+import { accounts as accountsTable, transactions } from '@/db/schema';
 import { Cash } from '@/money';
 import { registerRows } from '@/domain/accounts';
 import { balanceTimeSeries } from '@/domain/charts';
@@ -29,12 +29,16 @@ export default async function AccountPage({
   const account = await getAccount(user.id, id);
   if (!account) notFound();
 
-  const [txRows, payees] = await Promise.all([
+  const [txRows, payees, allAccountsRaw] = await Promise.all([
     db
       .select()
       .from(transactions)
       .where(and(eq(transactions.accountId, account.id), eq(transactions.isDeleted, false))),
     listPayees(user.id),
+    db
+      .select({ id: accountsTable.id, name: accountsTable.name, openingDate: accountsTable.openingDate })
+      .from(accountsTable)
+      .where(and(eq(accountsTable.userId, user.id), eq(accountsTable.isArchived, false))),
   ]);
 
   const openingCash = Cash.of(account.openingBalance);
@@ -188,7 +192,8 @@ export default async function AccountPage({
         </div>
       ) : (
         <RegisterTable
-          openingDate={account.openingDate}
+          currentAccountId={account.id}
+          accounts={allAccountsRaw}
           payees={payees.map((p) => ({ id: p.id, name: p.name }))}
           rows={register.map<RegisterRowData>((r) => {
             const raw = byId.get(r.transaction.id)!;

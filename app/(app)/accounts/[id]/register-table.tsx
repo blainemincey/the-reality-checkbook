@@ -31,14 +31,18 @@ export interface RegisterRowData {
 interface Props {
   rows: readonly RegisterRowData[];
   payees: readonly { id: string; name: string }[];
-  openingDate: string;
+  /** The account (or all accounts if txn-moving is allowed). Each entry
+   *  carries openingDate for date-validation. */
+  accounts: readonly { id: string; name: string; openingDate: string }[];
+  /** Default when rows are being seen in a single-account context. */
+  currentAccountId: string;
 }
 
 const PAGE_SIZE_OPTIONS = [25, 50, 75] as const;
 type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
 const PAGE_SIZE_STORAGE_KEY = 'cr.register.pageSize';
 
-export function RegisterTable({ rows, payees, openingDate }: Props) {
+export function RegisterTable({ rows, payees, accounts, currentAccountId }: Props) {
   const [editing, setEditing] = useState<EditableTxn | null>(null);
   const [pageSize, setPageSize] = useState<PageSize>(25);
   const [page, setPage] = useState(1);
@@ -115,7 +119,7 @@ export function RegisterTable({ rows, payees, openingDate }: Props) {
           </thead>
           <tbody>
             {pageRows.map((r) => (
-              <Row key={r.id} row={r} onEdit={() => setEditing(toEditable(r))} />
+              <Row key={r.id} row={r} onEdit={() => setEditing(toEditable(r, currentAccountId))} />
             ))}
           </tbody>
         </table>
@@ -158,7 +162,7 @@ export function RegisterTable({ rows, payees, openingDate }: Props) {
         <EditTransactionDialog
           txn={editing}
           payees={payees}
-          openingDate={openingDate}
+          accounts={accounts}
           onClose={() => setEditing(null)}
         />
       )}
@@ -287,11 +291,12 @@ function Row({
   );
 }
 
-function toEditable(r: RegisterRowData): EditableTxn {
+function toEditable(r: RegisterRowData, accountId: string): EditableTxn {
   const amount = Cash.of(r.amount);
   const isPayment = amount.isNegative();
   return {
     id: r.id,
+    accountId,
     txnDate: r.txnDate,
     payeeName: r.payee ?? '',
     payeeId: r.payeeId,

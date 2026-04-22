@@ -40,7 +40,11 @@ export interface UnifiedRegisterRow {
 
 interface Props {
   rows: readonly UnifiedRegisterRow[];
+  /** For filter dropdown. */
   accounts: readonly { id: string; name: string }[];
+  /** Full account metadata — powers the Account select inside the edit dialog
+   *  so users can move a txn between accounts. */
+  accountsWithOpening: readonly { id: string; name: string; openingDate: string }[];
   payees: readonly { id: string; name: string }[];
 }
 
@@ -49,14 +53,16 @@ type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
 const PAGE_SIZE_STORAGE_KEY = 'cr.unified-register.pageSize';
 const ACCOUNT_FILTER_STORAGE_KEY = 'cr.unified-register.accountFilter';
 
-export function UnifiedRegisterTable({ rows, accounts, payees }: Props) {
+export function UnifiedRegisterTable({
+  rows,
+  accounts,
+  accountsWithOpening,
+  payees,
+}: Props) {
   const [pageSize, setPageSize] = useState<PageSize>(25);
   const [page, setPage] = useState(1);
   const [accountFilter, setAccountFilter] = useState<'all' | string>('all');
-  const [editing, setEditing] = useState<{
-    txn: EditableTxn;
-    openingDate: string;
-  } | null>(null);
+  const [editing, setEditing] = useState<EditableTxn | null>(null);
 
   useEffect(() => {
     const storedSize = window.localStorage.getItem(PAGE_SIZE_STORAGE_KEY);
@@ -93,7 +99,7 @@ export function UnifiedRegisterTable({ rows, accounts, payees }: Props) {
   }, [page, totalPages]);
 
   const openEdit = (r: UnifiedRegisterRow) => {
-    setEditing({ txn: toEditable(r), openingDate: r.accountOpeningDate });
+    setEditing(toEditable(r));
   };
 
   return (
@@ -206,9 +212,9 @@ export function UnifiedRegisterTable({ rows, accounts, payees }: Props) {
 
       {editing && (
         <EditTransactionDialog
-          txn={editing.txn}
+          txn={editing}
           payees={payees}
-          openingDate={editing.openingDate}
+          accounts={accountsWithOpening}
           onClose={() => setEditing(null)}
         />
       )}
@@ -358,6 +364,7 @@ function toEditable(r: UnifiedRegisterRow): EditableTxn {
   const isPayment = amount.isNegative();
   return {
     id: r.id,
+    accountId: r.accountId,
     txnDate: r.txnDate,
     payeeName: r.payee ?? '',
     payeeId: r.payeeId,

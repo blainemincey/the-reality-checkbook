@@ -76,6 +76,8 @@ export interface UpdateTxnInput {
   readonly memo: string;
   readonly checkNumber: string;
   readonly clearedState: ClearedState;
+  /** Optional: move the transaction to a different account. */
+  readonly accountId?: string;
 }
 
 export interface UpdateTxnResult {
@@ -93,17 +95,20 @@ export async function updateTransactionAction(
   const current = await loadOwnedTxn(user.id, txnId);
   if (!current) return { ok: false, error: 'Transaction not found' };
 
+  // Resolve the target account: either the provided new one (verify ownership)
+  // or the transaction's current one.
+  const targetAccountId = input.accountId ?? current.accountId;
   const [account] = await db
     .select()
     .from(accounts)
-    .where(eq(accounts.id, current.accountId));
-  if (!account) return { ok: false, error: 'Account not found' };
+    .where(and(eq(accounts.id, targetAccountId), eq(accounts.userId, user.id)));
+  if (!account) return { ok: false, error: 'Target account not found' };
 
   if (!ISO_DATE.test(input.txnDate)) return { ok: false, error: 'Invalid date' };
   if (input.txnDate < account.openingDate) {
     return {
       ok: false,
-      error: `Date must be on or after opening_date ${account.openingDate}`,
+      error: `Date must be on or after ${account.name}'s opening date (${account.openingDate})`,
     };
   }
 
@@ -161,6 +166,7 @@ export async function updateTransactionAction(
   await db
     .update(transactions)
     .set({
+      accountId: account.id,
       txnDate: input.txnDate,
       payee: payeeNameFinal || null,
       payeeId,
@@ -172,7 +178,12 @@ export async function updateTransactionAction(
     })
     .where(eq(transactions.id, txnId));
 
+  // If the account moved, invalidate both ledgers' caches.
+  if (current.accountId !== account.id) {
+    revalidateForTxn(current.accountId);
+  }
   revalidateForTxn(account.id);
+  revalidatePath('/register');
   return { ok: true };
 }
 

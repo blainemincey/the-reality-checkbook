@@ -144,6 +144,11 @@ export default async function RegisterPage() {
         <UnifiedRegisterTable
           rows={rows}
           accounts={accountFilters}
+          accountsWithOpening={acctRows.map((a) => ({
+            id: a.id,
+            name: a.name,
+            openingDate: a.openingDate,
+          }))}
           payees={payees.map((p) => ({ id: p.id, name: p.name }))}
         />
       )}

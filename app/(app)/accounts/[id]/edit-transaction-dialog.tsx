@@ -13,6 +13,7 @@ type TxnKind =
 
 export interface EditableTxn {
   id: string;
+  accountId: string;
   txnDate: string;
   payeeName: string;
   payeeId: string | null;
@@ -27,7 +28,12 @@ export interface EditableTxn {
 interface Props {
   txn: EditableTxn;
   payees: readonly { id: string; name: string }[];
-  openingDate: string;
+  /**
+   * Accounts eligible for this transaction. If more than one, the dialog
+   * shows an Account select letting the user move the txn. Each account's
+   * openingDate is used to validate the date field when it's selected.
+   */
+  accounts: readonly { id: string; name: string; openingDate: string }[];
   onClose: () => void;
 }
 
@@ -46,12 +52,17 @@ const KIND_OPTIONS: Array<{ value: TxnKind; label: string }> = [
   { value: 'other', label: 'Other' },
 ];
 
-export function EditTransactionDialog({ txn, payees, openingDate, onClose }: Props) {
+export function EditTransactionDialog({ txn, payees, accounts, onClose }: Props) {
   const router = useRouter();
   const [state, setState] = useState<EditableTxn>(txn);
   const [error, setError] = useState<string | null>(null);
   const [saving, startSave] = useTransition();
   const dialogRef = useRef<HTMLDivElement>(null);
+
+  const currentAccount =
+    accounts.find((a) => a.id === state.accountId) ?? accounts[0];
+  const openingDate = currentAccount?.openingDate ?? state.txnDate;
+  const showAccountSelect = accounts.length > 1;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -77,6 +88,7 @@ export function EditTransactionDialog({ txn, payees, openingDate, onClose }: Pro
       memo: state.memo,
       checkNumber: state.checkNumber,
       clearedState: state.clearedState,
+      accountId: state.accountId,
     };
     startSave(async () => {
       const result = await updateTransactionAction(txn.id, payload);
@@ -136,6 +148,30 @@ export function EditTransactionDialog({ txn, payees, openingDate, onClose }: Pro
           }}
           className="grid grid-cols-1 gap-4 px-5 py-5 md:grid-cols-2"
         >
+          {showAccountSelect && (
+            <Field label="Account" className="md:col-span-2">
+              <select
+                value={state.accountId}
+                onChange={(e) =>
+                  setState((s) => {
+                    const next = accounts.find((a) => a.id === e.target.value);
+                    // If current date is before the new account's opening, bump it forward.
+                    const newDate =
+                      next && s.txnDate < next.openingDate ? next.openingDate : s.txnDate;
+                    return { ...s, accountId: e.target.value, txnDate: newDate };
+                  })
+                }
+                className="input"
+              >
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
+
           <Field label="Date">
             <input
               type="date"
