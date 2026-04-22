@@ -26,3 +26,17 @@ export async function redirectIfAuthed(target = '/'): Promise<void> {
   const result = await auth();
   if (result.user) redirect(target);
 }
+
+/**
+ * Use in server components / actions that require admin role.
+ * Redirects to '/' for authenticated non-admins; to '/login' if unauthed.
+ */
+export async function requireAdmin(): Promise<
+  ReturnType<typeof requireAuth> extends Promise<infer T> ? T : never
+> {
+  const result = await requireAuth();
+  if (result.user.role !== 'admin') {
+    redirect('/');
+  }
+  return result;
+}

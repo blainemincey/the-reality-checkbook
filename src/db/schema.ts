@@ -36,6 +36,8 @@ export const clearedStateEnum = pgEnum('cleared_state', [
 
 export const categoryKindEnum = pgEnum('category_kind', ['expense', 'income', 'transfer']);
 
+export const userRoleEnum = pgEnum('user_role', ['admin', 'user']);
+
 // ---------------------------------------------------------------------------
 // Currencies — tiny reference table so accounts.currency is a real FK
 // ---------------------------------------------------------------------------
@@ -54,6 +56,7 @@ export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
+  role: userRoleEnum('role').notNull().default('user'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
