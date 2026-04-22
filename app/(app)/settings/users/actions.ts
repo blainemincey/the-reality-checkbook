@@ -6,6 +6,7 @@ import { db } from '@/db/client';
 import { users } from '@/db/schema';
 import { hashPassword, PasswordError } from '@/lib/auth/password';
 import { requireAdmin } from '@/lib/auth/guards';
+import { isValidUsername, normalizeUsername } from '@/lib/username';
 
 export interface UserActionState {
   error?: string;
@@ -14,25 +15,23 @@ export interface UserActionState {
 
 type Role = 'admin' | 'user';
 
-const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-
-function normalizeEmail(raw: string): string | null {
-  const s = raw.trim().toLowerCase();
-  return EMAIL_RE.test(s) ? s : null;
-}
-
 export async function createUserAction(
   _prev: UserActionState,
   formData: FormData,
 ): Promise<UserActionState> {
   await requireAdmin();
 
-  const email = normalizeEmail(String(formData.get('email') ?? ''));
+  const username = normalizeUsername(String(formData.get('username') ?? ''));
   const password = String(formData.get('password') ?? '');
   const roleRaw = String(formData.get('role') ?? 'user');
   const role: Role = roleRaw === 'admin' ? 'admin' : 'user';
 
-  if (!email) return { error: 'Enter a valid email' };
+  if (!isValidUsername(username)) {
+    return {
+      error:
+        'Username must be 3–32 chars: lowercase letters, digits, . _ -; start/end with letter or digit.',
+    };
+  }
 
   let passwordHash: string;
   try {
@@ -43,16 +42,16 @@ export async function createUserAction(
   }
 
   try {
-    await db.insert(users).values({ email, passwordHash, role });
+    await db.insert(users).values({ username, passwordHash, role });
   } catch (e) {
     if ((e as { code?: string }).code === '23505') {
-      return { error: `User ${email} already exists.` };
+      return { error: `Username "${username}" already exists.` };
     }
     throw e;
   }
 
   revalidatePath('/settings/users');
-  return { success: `Added ${email}` };
+  return { success: `Added ${username}` };
 }
 
 export async function updateUserRoleAction(
@@ -63,7 +62,6 @@ export async function updateUserRoleAction(
 
   if (role !== 'admin' && role !== 'user') return { error: 'Invalid role' };
 
-  // Don't let an admin demote themselves if they're the last admin.
   if (targetId === user.id && role !== 'admin') {
     const admins = await db.select({ id: users.id }).from(users).where(eq(users.role, 'admin'));
     if (admins.length <= 1) {
@@ -103,7 +101,6 @@ export async function deleteUserAction(targetId: string): Promise<UserActionStat
     return { error: "You can't delete yourself." };
   }
 
-  // Block delete if the target is an admin and they're the only other admin.
   const [target] = await db.select().from(users).where(eq(users.id, targetId));
   if (!target) return { error: 'User not found' };
   if (target.role === 'admin') {
@@ -118,5 +115,5 @@ export async function deleteUserAction(targetId: string): Promise<UserActionStat
 
   await db.delete(users).where(eq(users.id, targetId));
   revalidatePath('/settings/users');
-  return { success: `Deleted ${target.email}` };
+  return { success: `Deleted ${target.username}` };
 }

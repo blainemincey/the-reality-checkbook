@@ -34,14 +34,14 @@ export async function resetDatabase(): Promise<void> {
 
 export interface SeededUser {
   id: string;
-  email: string;
+  username: string;
   password: string;
   sessionToken: string;
   sessionCookie: string;
 }
 
 export async function seedUserAndSession(
-  email = 'e2e@example.com',
+  username = 'e2euser',
   password = 'e2e-password-1234',
 ): Promise<SeededUser> {
   const sql = makeClient();
@@ -53,8 +53,8 @@ export async function seedUserAndSession(
       parallelism: 1,
     });
     const [user] = await sql<{ id: string }[]>`
-      INSERT INTO users (email, password_hash)
-      VALUES (${email}, ${passwordHash})
+      INSERT INTO users (username, password_hash)
+      VALUES (${username}, ${passwordHash})
       RETURNING id
     `;
     const userId = user!.id;
@@ -69,7 +69,7 @@ export async function seedUserAndSession(
 
     return {
       id: userId,
-      email,
+      username,
       password,
       sessionToken: token,
       sessionCookie: `cr_session=${token}`,

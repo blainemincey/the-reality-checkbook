@@ -37,7 +37,7 @@ export default async function UsersSettingsPage() {
               key={u.id}
               user={{
                 id: u.id,
-                email: u.email,
+                username: u.username,
                 role: u.role,
                 createdAt: u.createdAt.toISOString(),
               }}

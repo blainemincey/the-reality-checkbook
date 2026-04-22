@@ -8,31 +8,32 @@ import { verifyPassword } from '@/lib/auth/password';
 import { createSession } from '@/lib/auth/session';
 import { setSessionCookie, clearSessionCookie } from '@/lib/auth/cookies';
 import { auth, invalidateSession } from '@/lib/auth';
+import { normalizeUsername } from '@/lib/username';
 
 export interface LoginState {
   error?: string;
 }
 
+// Dummy argon2id hash so we verify even when the user doesn't exist, to keep
+// lookup timing roughly constant.
+const DUMMY_HASH =
+  '$argon2id$v=19$m=19456,t=2,p=1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
+
 export async function loginAction(
   _prev: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
-  const email = String(formData.get('email') ?? '').trim().toLowerCase();
+  const username = normalizeUsername(String(formData.get('username') ?? ''));
   const password = String(formData.get('password') ?? '');
 
-  if (!email || !password) {
-    return { error: 'Email and password are required.' };
+  if (!username || !password) {
+    return { error: 'Username and password are required.' };
   }
 
-  const [user] = await db.select().from(users).where(eq(users.email, email));
-  // Constant-ish time: always run verify (even with dummy hash) if no user.
-  const hash =
-    user?.passwordHash ??
-    '$argon2id$v=19$m=19456,t=2,p=1$AAAAAAAAAAAAAAAAAAAAAA$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA';
-  const ok = await verifyPassword(hash, password);
-
+  const [user] = await db.select().from(users).where(eq(users.username, username));
+  const ok = await verifyPassword(user?.passwordHash ?? DUMMY_HASH, password);
   if (!user || !ok) {
-    return { error: 'Invalid email or password.' };
+    return { error: 'Invalid username or password.' };
   }
 
   const { token, expiresAt } = await createSession(user.id);

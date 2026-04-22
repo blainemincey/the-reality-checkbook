@@ -12,14 +12,17 @@ export function LoginForm() {
     <form action={action} className="space-y-4">
       <label className="block">
         <span className="mb-1.5 block text-[10px] uppercase tracking-wider text-text-tertiary">
-          Email
+          Username
         </span>
         <input
-          id="email"
-          name="email"
-          type="email"
+          id="username"
+          name="username"
+          type="text"
           required
           autoComplete="username"
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
           autoFocus
           className="input"
         />

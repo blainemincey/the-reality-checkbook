@@ -6,18 +6,13 @@ import {
   LineChart,
 } from 'lucide-react';
 import { requireAuth } from '@/lib/auth/guards';
+import { usernameInitials } from '@/lib/username';
 import { NavPill } from './nav-pill';
 import { UserMenu } from './user-menu';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { user } = await requireAuth();
-  const initials =
-    user.email
-      .split('@')[0]!
-      .split(/[._-]+/)
-      .map((s) => s[0]?.toUpperCase() ?? '')
-      .join('')
-      .slice(0, 2) || '??';
+  const initials = usernameInitials(user.username);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -54,7 +49,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               />
             </nav>
           </div>
-          <UserMenu email={user.email} role={user.role} initials={initials} />
+          <UserMenu username={user.username} role={user.role} initials={initials} />
         </div>
       </header>
       <div className="flex-1">{children}</div>

@@ -9,7 +9,7 @@ import {
 } from './actions';
 
 interface Props {
-  user: { id: string; email: string; role: 'admin' | 'user'; createdAt: string };
+  user: { id: string; username: string; role: 'admin' | 'user'; createdAt: string };
   isSelf: boolean;
 }
 
@@ -54,7 +54,7 @@ export function UserRow({ user, isSelf }: Props) {
     <li className="flex flex-wrap items-center gap-3 px-4 py-3">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className="truncate text-sm">{user.email}</span>
+          <span className="truncate text-sm">@{user.username}</span>
           {isSelf && (
             <span className="rounded border border-border-strong px-1.5 py-0.5 text-[9px] uppercase tracking-wider text-text-tertiary">
               you
@@ -71,7 +71,7 @@ export function UserRow({ user, isSelf }: Props) {
         onChange={(e) => handleRole(e.target.value as 'admin' | 'user')}
         disabled={pending}
         className="input !py-1 w-24 text-xs"
-        aria-label={`Role for ${user.email}`}
+        aria-label={`Role for ${user.username}`}
       >
         <option value="user">User</option>
         <option value="admin">Admin</option>

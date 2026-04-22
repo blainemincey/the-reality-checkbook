@@ -2,16 +2,16 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, LogOut, Settings, Users } from 'lucide-react';
+import { LogOut, Settings, Users } from 'lucide-react';
 import { logoutAction } from '../login/actions';
 
 interface Props {
-  email: string;
+  username: string;
   role: 'admin' | 'user';
   initials: string;
 }
 
-export function UserMenu({ email, role, initials }: Props) {
+export function UserMenu({ username, role, initials }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -28,27 +28,15 @@ export function UserMenu({ email, role, initials }: Props) {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2 rounded-full border border-transparent bg-chrome-border/40 px-1.5 py-1 text-xs text-chrome-text transition-colors duration-120 ease-swift hover:bg-chrome-border/70"
         aria-haspopup="menu"
         aria-expanded={open}
+        title={username}
+        className={
+          'inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-[#04140A] ring-2 ring-transparent transition-all duration-120 ease-swift hover:ring-accent/40 ' +
+          (open ? 'ring-accent/50' : '')
+        }
       >
-        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-[#04140A]">
-          {initials}
-        </span>
-        <span className="hidden flex-col leading-tight sm:flex">
-          <span className="text-[11px]">{email}</span>
-          {role === 'admin' && (
-            <span className="text-[9px] uppercase tracking-wider text-chrome-muted">
-              admin
-            </span>
-          )}
-        </span>
-        <ChevronDown
-          width={14}
-          height={14}
-          strokeWidth={2}
-          className={`text-chrome-muted transition-transform duration-120 ease-swift ${open ? 'rotate-180' : ''}`}
-        />
+        {initials}
       </button>
 
       {open && (
@@ -57,7 +45,7 @@ export function UserMenu({ email, role, initials }: Props) {
           className="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-lg border border-border bg-surface shadow-card"
         >
           <div className="border-b border-border px-3 py-2.5">
-            <div className="truncate text-xs text-text">{email}</div>
+            <div className="truncate text-xs font-medium text-text">@{username}</div>
             <div className="mt-0.5 text-[10px] uppercase tracking-wider text-text-tertiary">
               {role}
             </div>

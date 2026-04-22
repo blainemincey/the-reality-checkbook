@@ -19,13 +19,16 @@ export function NewUserForm() {
       <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_8rem]">
         <label className="flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
-            Email
+            Username
           </span>
           <input
-            name="email"
-            type="email"
+            name="username"
+            type="text"
             required
-            placeholder="someone@example.com"
+            autoCapitalize="off"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder="e.g. taylor"
             disabled={pending}
             className="input"
           />

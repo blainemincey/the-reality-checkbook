@@ -1,22 +1,22 @@
 // Create or promote a user. Reads credentials from:
-//   --email / --password CLI flags, OR
-//   INIT_EMAIL / INIT_PASSWORD env vars, OR
+//   --username / --password CLI flags, OR
+//   INIT_USERNAME / INIT_PASSWORD env vars, OR
 //   interactive prompt.
 //
 // Usage:
-//   npm run create-user                                  # interactive
-//   npm run create-user -- --email me@x.com              # prompt for password
-//   npm run create-user -- --admin                       # force role=admin
-//   npm run create-user -- --promote --email me@x.com    # flip existing user to admin
-//   INIT_EMAIL=... INIT_PASSWORD=... npm run create-user
+//   npm run create-user                                      # interactive
+//   npm run create-user -- --username taylor                 # prompt for password
+//   npm run create-user -- --admin                           # force role=admin
+//   npm run create-user -- --promote --username taylor       # flip existing user to admin
+//   INIT_USERNAME=... INIT_PASSWORD=... npm run create-user
 //
 // Role semantics:
 //   - The very first user (empty users table) is always created as 'admin'.
 //   - Otherwise the role is 'user' unless --admin or --role=admin is passed.
 //   - --promote updates an existing user's role without needing password.
 //
-// Requires DATABASE_URL (loaded from .env automatically below). Migrations
-// must already be applied.
+// Requires DATABASE_URL (loaded from .env automatically). Migrations must
+// already be applied.
 
 import 'dotenv/config';
 import { createInterface } from 'node:readline/promises';
@@ -25,11 +25,12 @@ import { eq, sql } from 'drizzle-orm';
 import { db } from '../src/db/client';
 import { users } from '../src/db/schema';
 import { hashPassword, PasswordError } from '../src/lib/auth/password';
+import { isValidUsername, normalizeUsername } from '../src/lib/username';
 
 type Role = 'admin' | 'user';
 
 interface Flags {
-  email?: string;
+  username?: string;
   password?: string;
   admin?: boolean;
   role?: Role;
@@ -45,8 +46,8 @@ function parseFlags(args: string[]): Flags {
     const next = args[i + 1];
     const hasValue = next !== undefined && !next.startsWith('--');
     switch (key) {
-      case 'email':
-        if (hasValue) { out.email = next; i++; }
+      case 'username':
+        if (hasValue) { out.username = next; i++; }
         break;
       case 'password':
         if (hasValue) { out.password = next; i++; }
@@ -65,12 +66,6 @@ function parseFlags(args: string[]): Flags {
   return out;
 }
 
-function normalizeEmail(raw: string): string | null {
-  const e = raw.trim().toLowerCase();
-  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)) return null;
-  return e;
-}
-
 async function promptLine(prompt: string, rl: ReturnType<typeof createInterface>): Promise<string> {
   return (await rl.question(prompt)).trim();
 }
@@ -87,10 +82,10 @@ async function main(): Promise<void> {
 }
 
 async function promoteUser(flags: Flags): Promise<void> {
-  const emailRaw = flags.email ?? env['INIT_EMAIL'] ?? '';
-  const email = normalizeEmail(emailRaw);
-  if (!email) {
-    console.error('--promote requires --email <valid address>');
+  const raw = flags.username ?? env['INIT_USERNAME'] ?? '';
+  const username = normalizeUsername(raw);
+  if (!isValidUsername(username)) {
+    console.error('--promote requires a valid --username');
     exit(2);
   }
   const targetRole: Role = flags.role ?? 'admin';
@@ -98,32 +93,34 @@ async function promoteUser(flags: Flags): Promise<void> {
   const [updated] = await db
     .update(users)
     .set({ role: targetRole })
-    .where(eq(users.email, email))
-    .returning({ id: users.id, email: users.email, role: users.role });
+    .where(eq(users.username, username))
+    .returning({ id: users.id, username: users.username, role: users.role });
 
   if (!updated) {
-    console.error(`No user found with email ${email}`);
+    console.error(`No user found: ${username}`);
     exit(1);
   }
-  console.log(`Set ${updated.email} role = ${updated.role}`);
+  console.log(`Set ${updated.username} role = ${updated.role}`);
   exit(0);
 }
 
 async function createUser(flags: Flags): Promise<void> {
-  let emailRaw = flags.email ?? env['INIT_EMAIL'] ?? '';
+  let usernameRaw = flags.username ?? env['INIT_USERNAME'] ?? '';
   let password = flags.password ?? env['INIT_PASSWORD'] ?? '';
 
   const rl = createInterface({ input: stdin, output: stdout });
   try {
-    if (!emailRaw) emailRaw = await promptLine('Email: ', rl);
+    if (!usernameRaw) usernameRaw = await promptLine('Username: ', rl);
     if (!password) password = await promptLine('Password (min 8 chars): ', rl);
   } finally {
     rl.close();
   }
 
-  const email = normalizeEmail(emailRaw);
-  if (!email) {
-    console.error(`Invalid email: "${emailRaw}"`);
+  const username = normalizeUsername(usernameRaw);
+  if (!isValidUsername(username)) {
+    console.error(
+      `Invalid username: "${usernameRaw}". Use 3–32 chars: lowercase letters, digits, . _ - ; must start/end with a letter or digit.`,
+    );
     exit(2);
   }
 
@@ -138,17 +135,16 @@ async function createUser(flags: Flags): Promise<void> {
     throw err;
   }
 
-  const existing = await db.select().from(users).where(eq(users.email, email));
+  const existing = await db.select().from(users).where(eq(users.username, username));
   if (existing.length > 0) {
     console.error(
-      `User already exists: ${email}\n` +
+      `User already exists: ${username}\n` +
         `To change an existing user's role, run:\n` +
-        `  npm run create-user -- --promote --email ${email}`,
+        `  npm run create-user -- --promote --username ${username}`,
     );
     exit(1);
   }
 
-  // First user in the system is always admin.
   const [count] = await db.select({ n: sql<number>`count(*)::int` }).from(users);
   const isFirstUser = (count?.n ?? 0) === 0;
 
@@ -158,11 +154,11 @@ async function createUser(flags: Flags): Promise<void> {
 
   const [inserted] = await db
     .insert(users)
-    .values({ email, passwordHash, role })
-    .returning({ id: users.id, email: users.email, role: users.role });
+    .values({ username, passwordHash, role })
+    .returning({ id: users.id, username: users.username, role: users.role });
 
   console.log(
-    `Created user ${inserted!.email} (id ${inserted!.id}, role ${inserted!.role}${isFirstUser ? ' — first user, auto-admin' : ''})`,
+    `Created user ${inserted!.username} (id ${inserted!.id}, role ${inserted!.role}${isFirstUser ? ' — first user, auto-admin' : ''})`,
   );
   exit(0);
 }

@@ -7,7 +7,7 @@
 //             row 2: Schwab Balance / Fidelity Balance / Combined)
 //
 // Usage:
-//   npm run import-xlsx -- <path.xlsx> --user-email me@x.com [--wipe] [--dry-run]
+//   npm run import-xlsx -- <path.xlsx> --user <username> [--wipe] [--dry-run]
 //
 // --wipe deletes the target user's existing accounts, payees, and transactions
 // before inserting. Without --wipe, the script refuses if the user already
@@ -32,7 +32,7 @@ type TxnKind =
 
 interface Flags {
   file?: string;
-  userEmail?: string;
+  username?: string;
   sheet?: string;
   wipe?: boolean;
   dryRun?: boolean;
@@ -51,8 +51,10 @@ function parseFlags(args: string[]): Flags {
     const next = args[i + 1];
     const hasVal = next !== undefined && !next.startsWith('--');
     switch (key) {
-      case 'user-email':
-        if (hasVal) { out.userEmail = next; i++; }
+      case 'user':
+      case 'username':
+      case 'user-email': // back-compat alias; now accepts a username
+        if (hasVal) { out.username = next; i++; }
         break;
       case 'sheet':
         if (hasVal) { out.sheet = next; i++; }
@@ -100,17 +102,17 @@ function institutionFor(instName: string): string {
 async function main(): Promise<void> {
   const flags = parseFlags(argv.slice(2));
   if (!flags.file) { console.error('Pass an xlsx path as the first argument.'); exit(2); }
-  if (!flags.userEmail) { console.error('--user-email is required.'); exit(2); }
+  if (!flags.username) { console.error('--user <username> is required.'); exit(2); }
 
-  const email = flags.userEmail.toLowerCase();
-  const [user] = await db.select().from(users).where(eq(users.email, email));
-  if (!user) { console.error(`No user: ${email}`); exit(1); }
+  const username = flags.username.toLowerCase();
+  const [user] = await db.select().from(users).where(eq(users.username, username));
+  if (!user) { console.error(`No user: ${username}`); exit(1); }
 
   // Existing data guard
   const existing = await db.select().from(accounts).where(eq(accounts.userId, user.id));
   if (existing.length > 0 && !flags.wipe) {
     console.error(
-      `User ${email} already has ${existing.length} account(s). Re-run with --wipe to replace them.`,
+      `User ${username} already has ${existing.length} account(s). Re-run with --wipe to replace them.`,
     );
     exit(1);
   }
@@ -207,7 +209,7 @@ async function main(): Promise<void> {
 
   // Destructive: wipe existing
   if (existing.length > 0) {
-    console.log(`Wiping existing accounts + transactions + payees for ${email}…`);
+    console.log(`Wiping existing accounts + transactions + payees for ${username}…`);
     await db.delete(transactions).where(
       eq(transactions.accountId, existing[0]!.id),
     ); // accounts CASCADE via FK, but transactions ON DELETE RESTRICT
