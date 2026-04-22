@@ -1,30 +1,52 @@
-// A small colored tile carrying the institution's first letter. The color is
-// deterministic per normalized institution name (same Schwab → same amber
-// every time), pulled from an 8-entry palette defined in globals.css so both
-// themes share the same perceptual weight.
+// A small square marker for an account's institution.
 //
-// We intentionally do NOT ship brand logos — licensing aside, a grid of
-// official bank logos reads like a SaaS settings page. A letter tile stays
-// consistent across any institution the user adds, including ones that don't
-// exist yet.
+//  1. If public/institutions/<slug>.svg exists, render that logo on a neutral
+//     tile. Slug is the first alphanumeric run of the normalized institution
+//     name ("Charles Schwab" → "charles"; drop a file at
+//     public/institutions/charles.svg to match).
+//  2. Otherwise, render a letter tile colored by a deterministic hash over
+//     the slug — same name always yields the same hue.
+//
+// We deliberately don't ship brand logos in the repo. Owners drop their own
+// SVGs in public/institutions/ and the module-load scan picks them up at
+// server start.
+//
+// Server-only: uses fs.readdirSync at module load. If you end up rendering
+// the badge from a client component, lift the logo check up to a server
+// component and pass down `logoSlug` as a prop.
+
+import { readdirSync } from 'node:fs';
+import path from 'node:path';
+
+const PALETTE_SIZE = 8;
+
+const AVAILABLE_LOGOS: Set<string> = (() => {
+  try {
+    const dir = path.join(process.cwd(), 'public', 'institutions');
+    return new Set(
+      readdirSync(dir)
+        .filter((f) => f.toLowerCase().endsWith('.svg'))
+        .map((f) => f.replace(/\.svg$/i, '').toLowerCase()),
+    );
+  } catch {
+    return new Set();
+  }
+})();
 
 interface Props {
   institution?: string | null;
-  fallback: string; // usually the account name — used when institution is empty
+  fallback: string;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
 const SIZE_CLASSES = {
   sm: 'h-7 w-7 text-xs',
-  md: 'h-8 w-8 text-sm',
-  lg: 'h-10 w-10 text-base',
+  md: 'h-9 w-9 text-sm',
+  lg: 'h-11 w-11 text-base',
 } as const;
 
-const PALETTE_SIZE = 8;
-
 function hashToIndex(s: string): number {
-  // djb2 — fast, good distribution for short strings
   let h = 5381;
   for (let i = 0; i < s.length; i++) h = (h << 5) + h + s.charCodeAt(i);
   return (h >>> 0) % PALETTE_SIZE;
@@ -33,20 +55,21 @@ function hashToIndex(s: string): number {
 function firstInitial(s: string): string {
   const trimmed = s.trim();
   if (!trimmed) return '·';
-  // Skip non-letter leading chars ("$", "+", etc.)
   for (const ch of trimmed) {
     if (/[\p{L}]/u.test(ch)) return ch.toUpperCase();
   }
   return trimmed[0]!.toUpperCase();
 }
 
-function normalize(s: string): string {
-  return s
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .split(' ')
-    .find((w) => w.length > 0) ?? '';
+function toSlug(s: string): string {
+  return (
+    s
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .split(' ')
+      .find((w) => w.length > 0) ?? ''
+  );
 }
 
 export function InstitutionBadge({
@@ -56,10 +79,27 @@ export function InstitutionBadge({
   className = '',
 }: Props) {
   const source = (institution ?? '').trim() || fallback;
-  const key = normalize(source) || fallback;
-  const index = hashToIndex(key);
-  const initial = firstInitial(source);
+  const slug = toSlug(source);
 
+  if (slug && AVAILABLE_LOGOS.has(slug)) {
+    return (
+      <span
+        title={source}
+        className={`inline-flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-white shadow-sm ${SIZE_CLASSES[size]} ${className}`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={`/institutions/${slug}.svg`}
+          alt=""
+          aria-hidden
+          className="h-[68%] w-[68%] object-contain"
+        />
+      </span>
+    );
+  }
+
+  const index = hashToIndex(slug || fallback);
+  const initial = firstInitial(source);
   const style = {
     backgroundColor: `rgb(var(--badge-${index}) / 0.14)`,
     color: `rgb(var(--badge-${index}))`,

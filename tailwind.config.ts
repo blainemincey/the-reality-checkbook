@@ -9,15 +9,28 @@ const config: Config = {
       colors: {
         canvas: 'rgb(var(--color-canvas) / <alpha-value>)',
         surface: 'rgb(var(--color-surface) / <alpha-value>)',
-        border: 'rgb(var(--color-border) / <alpha-value>)',
+        border: {
+          DEFAULT: 'rgb(var(--color-border) / <alpha-value>)',
+          strong: 'rgb(var(--color-border-strong) / <alpha-value>)',
+        },
         text: {
           DEFAULT: 'rgb(var(--color-text) / <alpha-value>)',
           secondary: 'rgb(var(--color-text-secondary) / <alpha-value>)',
           tertiary: 'rgb(var(--color-text-tertiary) / <alpha-value>)',
         },
+        chrome: {
+          DEFAULT: 'rgb(var(--color-chrome) / <alpha-value>)',
+          text: 'rgb(var(--color-chrome-text) / <alpha-value>)',
+          muted: 'rgb(var(--color-chrome-muted) / <alpha-value>)',
+          border: 'rgb(var(--color-chrome-border) / <alpha-value>)',
+        },
         credit: 'rgb(var(--color-credit) / <alpha-value>)',
         debit: 'rgb(var(--color-debit) / <alpha-value>)',
-        accent: 'rgb(var(--color-accent) / <alpha-value>)',
+        accent: {
+          DEFAULT: 'rgb(var(--color-accent) / <alpha-value>)',
+          hover: 'rgb(var(--color-accent-hover) / <alpha-value>)',
+          soft: 'rgb(var(--color-accent-soft) / <alpha-value>)',
+        },
         reconciled: 'rgb(var(--color-reconciled) / <alpha-value>)',
       },
       fontFamily: {
