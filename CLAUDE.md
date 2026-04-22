@@ -51,6 +51,8 @@ The project has a deliberate layering; read this before edits, especially under 
 
 - **`src/server/`** — Next.js server actions grouped by domain. The only layer that translates between DB rows and domain objects. App routes in `/app` import from here, never directly from `/src/db`.
 
+- **`src/lib/auth/`** — credentials auth. `password.ts` (argon2id via `@node-rs/argon2`) and `token.ts` are pure; `session.ts` and `cookies.ts` hit the DB / `next/headers`. High-level `auth()` in `src/lib/auth/index.ts` reads the cookie and returns `{ user, session }` for server components and actions. The session cookie carries a random token; the DB stores its SHA-256 (a DB leak does not give an attacker usable cookies). Do not introduce a framework (Lucia/Auth.js/better-auth) for single-user scope — this module is small enough to own.
+
 - **`/app/`** — Next.js app router UI. Server components by default; client components only where required (register grid, shortcut overlay, paste parser UI).
 
 If you find yourself putting SQL in `/src/domain` or `decimal.js` in `/app`, stop — that's a layer violation.
