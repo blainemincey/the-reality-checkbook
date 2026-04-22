@@ -16,7 +16,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <span className="inline-block h-2 w-2 rounded-full bg-accent shadow-[0_0_12px_rgb(var(--color-accent)/0.6)]" />
             Check Register
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5">
+            <Link
+              href="/settings/institutions"
+              className="text-xs text-chrome-muted transition-colors duration-120 ease-swift hover:text-chrome-text"
+            >
+              Settings
+            </Link>
             <span className="text-xs text-chrome-muted">
               {user.email}
               {user.role === 'admin' && (

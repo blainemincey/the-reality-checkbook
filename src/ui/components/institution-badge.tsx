@@ -17,10 +17,13 @@
 
 import { readdirSync } from 'node:fs';
 import path from 'node:path';
+import { cache } from 'react';
 
 const PALETTE_SIZE = 8;
 
-const AVAILABLE_LOGOS: Set<string> = (() => {
+// React.cache dedupes per-request. New uploads show up on the next request
+// without a server restart because we read fs each request (just once).
+export const getAvailableLogos = cache((): Set<string> => {
   try {
     const dir = path.join(process.cwd(), 'public', 'institutions');
     return new Set(
@@ -31,7 +34,18 @@ const AVAILABLE_LOGOS: Set<string> = (() => {
   } catch {
     return new Set();
   }
-})();
+});
+
+export function institutionSlug(source: string): string {
+  return (
+    source
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, ' ')
+      .split(' ')
+      .find((w) => w.length > 0) ?? ''
+  );
+}
 
 interface Props {
   institution?: string | null;
@@ -61,17 +75,6 @@ function firstInitial(s: string): string {
   return trimmed[0]!.toUpperCase();
 }
 
-function toSlug(s: string): string {
-  return (
-    s
-      .trim()
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, ' ')
-      .split(' ')
-      .find((w) => w.length > 0) ?? ''
-  );
-}
-
 export function InstitutionBadge({
   institution,
   fallback,
@@ -79,9 +82,10 @@ export function InstitutionBadge({
   className = '',
 }: Props) {
   const source = (institution ?? '').trim() || fallback;
-  const slug = toSlug(source);
+  const slug = institutionSlug(source);
+  const available = getAvailableLogos();
 
-  if (slug && AVAILABLE_LOGOS.has(slug)) {
+  if (slug && available.has(slug)) {
     return (
       <span
         title={source}

@@ -47,7 +47,17 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
         </Link>
         <div className="mt-2 flex items-center justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
-            <InstitutionBadge institution={account.institution} fallback={account.name} size="lg" />
+            <Link
+              href="/settings/institutions"
+              title={
+                account.institution
+                  ? `Manage logo for ${account.institution}`
+                  : 'Manage institution logos'
+              }
+              className="rounded-md transition-transform duration-120 ease-swift hover:scale-105"
+            >
+              <InstitutionBadge institution={account.institution} fallback={account.name} size="lg" />
+            </Link>
             <div className="min-w-0">
               <h1 className="truncate text-lg font-medium">{account.name}</h1>
               <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-text-tertiary">
