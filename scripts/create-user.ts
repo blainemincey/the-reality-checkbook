@@ -15,8 +15,10 @@
 //   - Otherwise the role is 'user' unless --admin or --role=admin is passed.
 //   - --promote updates an existing user's role without needing password.
 //
-// Requires DATABASE_URL. Migrations must already be applied.
+// Requires DATABASE_URL (loaded from .env automatically below). Migrations
+// must already be applied.
 
+import 'dotenv/config';
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout, exit, env, argv } from 'node:process';
 import { eq, sql } from 'drizzle-orm';
