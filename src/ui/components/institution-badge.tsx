@@ -21,18 +21,30 @@ import { cache } from 'react';
 
 const PALETTE_SIZE = 8;
 
-// React.cache dedupes per-request. New uploads show up on the next request
-// without a server restart because we read fs each request (just once).
-export const getAvailableLogos = cache((): Set<string> => {
+const LOGO_EXT_RE = /\.(svg|png|jpe?g|webp|gif)$/i;
+
+// Map of slug → actual filename (including extension). React.cache dedupes
+// per-request; new uploads/imports appear on the next request with no server
+// restart. If multiple extensions exist for the same slug, the latest one
+// wins (svg-then-png ordering is platform-specific; we prefer svg).
+export const getAvailableLogos = cache((): Map<string, string> => {
   try {
     const dir = path.join(process.cwd(), 'public', 'institutions');
-    return new Set(
-      readdirSync(dir)
-        .filter((f) => f.toLowerCase().endsWith('.svg'))
-        .map((f) => f.replace(/\.svg$/i, '').toLowerCase()),
-    );
+    const entries = readdirSync(dir).filter((f) => LOGO_EXT_RE.test(f));
+    // Prefer SVG when both exist for the same slug
+    entries.sort((a, b) => {
+      const aSvg = a.toLowerCase().endsWith('.svg') ? 1 : 0;
+      const bSvg = b.toLowerCase().endsWith('.svg') ? 1 : 0;
+      return bSvg - aSvg;
+    });
+    const map = new Map<string, string>();
+    for (const f of entries) {
+      const base = f.replace(LOGO_EXT_RE, '').toLowerCase();
+      if (!map.has(base)) map.set(base, f);
+    }
+    return map;
   } catch {
-    return new Set();
+    return new Map();
   }
 });
 
@@ -84,8 +96,9 @@ export function InstitutionBadge({
   const source = (institution ?? '').trim() || fallback;
   const slug = institutionSlug(source);
   const available = getAvailableLogos();
+  const filename = slug ? available.get(slug) : undefined;
 
-  if (slug && available.has(slug)) {
+  if (filename) {
     return (
       <span
         title={source}
@@ -93,7 +106,7 @@ export function InstitutionBadge({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={`/institutions/${slug}.svg`}
+          src={`/institutions/${filename}`}
           alt=""
           aria-hidden
           className="h-[68%] w-[68%] object-contain"
