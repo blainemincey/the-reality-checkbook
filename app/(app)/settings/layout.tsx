@@ -20,6 +20,14 @@ export default async function SettingsLayout({
               Institutions
             </Link>
           </li>
+          <li>
+            <Link
+              href="/settings/payees"
+              className="block rounded px-2 py-1.5 text-text-secondary transition-colors duration-120 ease-swift hover:bg-canvas hover:text-text"
+            >
+              Payees
+            </Link>
+          </li>
         </ul>
       </nav>
       <section>{children}</section>

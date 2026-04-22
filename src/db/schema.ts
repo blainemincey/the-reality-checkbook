@@ -237,6 +237,43 @@ export const categoriesRelations = relations(categories, ({ one, many }) => ({
   transactions: many(transactions),
 }));
 
+// ---------------------------------------------------------------------------
+// Payees (vendors) — configured in settings, surfaced as a dropdown / autocomplete
+// during transaction entry and reconciliation.
+// ---------------------------------------------------------------------------
+
+export const payees = pgTable(
+  'payees',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    defaultCategoryId: uuid('default_category_id').references(() => categories.id, {
+      onDelete: 'set null',
+    }),
+    memoTemplate: text('memo_template'),
+    isArchived: boolean('is_archived').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [unique('payees_user_name_unique').on(t.userId, t.name)],
+);
+
+export const payeesRelations = relations(payees, ({ one }) => ({
+  user: one(users, { fields: [payees.userId], references: [users.id] }),
+  defaultCategory: one(categories, {
+    fields: [payees.defaultCategoryId],
+    references: [categories.id],
+  }),
+}));
+
+export type PayeeRow = typeof payees.$inferSelect;
+
 export const reconciliationsRelations = relations(reconciliations, ({ one, many }) => ({
   account: one(accounts, { fields: [reconciliations.accountId], references: [accounts.id] }),
   transactions: many(transactions),
