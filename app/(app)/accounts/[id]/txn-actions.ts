@@ -8,7 +8,7 @@ import { Cash, parseCashInput } from '@/money';
 import { requireAuth } from '@/lib/auth/guards';
 import type { TxnKind } from './entry-action';
 
-type ClearedState = 'uncleared' | 'cleared' | 'reconciled';
+type ClearedState = 'uncleared' | 'cleared';
 
 async function loadOwnedTxn(
   userId: string,
@@ -28,27 +28,23 @@ function revalidateForTxn(accountId: string): void {
 }
 
 // ---------------------------------------------------------------------------
-// Cycle cleared state: uncleared → cleared → reconciled → uncleared
+// Toggle cleared state: uncleared ↔ cleared
 // ---------------------------------------------------------------------------
 
-export interface CycleClearedResult {
+export interface ToggleClearedResult {
   ok: boolean;
   newState?: ClearedState;
   error?: string;
 }
 
-export async function cycleClearedStateAction(txnId: string): Promise<CycleClearedResult> {
+export async function toggleClearedStateAction(
+  txnId: string,
+): Promise<ToggleClearedResult> {
   const { user } = await requireAuth();
   const current = await loadOwnedTxn(user.id, txnId);
   if (!current) return { ok: false, error: 'Transaction not found' };
 
-  const next: ClearedState =
-    current.clearedState === 'uncleared'
-      ? 'cleared'
-      : current.clearedState === 'cleared'
-        ? 'reconciled'
-        : 'uncleared';
-
+  const next: ClearedState = current.clearedState === 'cleared' ? 'uncleared' : 'cleared';
   await db.update(transactions).set({ clearedState: next }).where(eq(transactions.id, txnId));
   revalidateForTxn(current.accountId);
   return { ok: true, newState: next };
@@ -57,7 +53,7 @@ export async function cycleClearedStateAction(txnId: string): Promise<CycleClear
 export async function setClearedStateAction(
   txnId: string,
   state: ClearedState,
-): Promise<CycleClearedResult> {
+): Promise<ToggleClearedResult> {
   const { user } = await requireAuth();
   const current = await loadOwnedTxn(user.id, txnId);
   if (!current) return { ok: false, error: 'Transaction not found' };

@@ -172,12 +172,4 @@ describe('reconciliationDelta', () => {
     expect(result.isBalanced).toBe(true);
   });
 
-  it('includes reconciled transactions alongside cleared', () => {
-    const txs = [
-      tx('a', '2026-11-02', '-100.00', 'reconciled'),
-      tx('b', '2026-11-03', '-50.00', 'cleared'),
-    ];
-    const result = reconciliationDelta(account, txs, '2026-11-15', Cash.of('4081.07'));
-    expect(result.isBalanced).toBe(true);
-  });
 });

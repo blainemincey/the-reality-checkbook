@@ -1,16 +1,16 @@
 'use client';
 
 import { useOptimistic, useState, useTransition } from 'react';
-import { Check, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react';
-import { Cash, formatCash } from '@/money';
+import { Check, Pencil, Trash2, X } from 'lucide-react';
+import { Cash } from '@/money';
 import { Amount } from '@/ui/components/amount';
 import {
-  cycleClearedStateAction,
+  toggleClearedStateAction,
   deleteTransactionAction,
 } from './txn-actions';
 import { EditTransactionDialog, type EditableTxn } from './edit-transaction-dialog';
 
-type ClearedState = 'uncleared' | 'cleared' | 'reconciled';
+type ClearedState = 'uncleared' | 'cleared';
 type TxnKind =
   | 'deposit' | 'payment' | 'bill_pay' | 'check' | 'atm' | 'interest'
   | 'dividend' | 'transfer' | 'tax_payment' | 'fee' | 'refund' | 'other';
@@ -43,7 +43,7 @@ export function RegisterTable({ rows, payees, openingDate }: Props) {
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <h2 className="text-sm font-semibold">Register</h2>
         <span className="text-[11px] text-text-tertiary">
-          click the status dot to cycle uncleared · cleared · reconciled
+          click the status dot to toggle cleared
         </span>
       </div>
       <div className="overflow-x-auto">
@@ -96,19 +96,13 @@ function Row({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const isPayment = Cash.of(row.amount).isNegative();
-  const cleared = optimisticState !== 'uncleared';
-  const reconciled = optimisticState === 'reconciled';
+  const cleared = optimisticState === 'cleared';
 
-  const cycle = () => {
-    const next: ClearedState =
-      optimisticState === 'uncleared'
-        ? 'cleared'
-        : optimisticState === 'cleared'
-          ? 'reconciled'
-          : 'uncleared';
+  const toggle = () => {
+    const next: ClearedState = cleared ? 'uncleared' : 'cleared';
     startTransition(async () => {
       setOptimisticState(next);
-      await cycleClearedStateAction(row.id);
+      await toggleClearedStateAction(row.id);
     });
   };
 
@@ -123,30 +117,18 @@ function Row({
       <td className="px-3 py-2 text-center">
         <button
           type="button"
-          onClick={cycle}
+          onClick={toggle}
           disabled={pending}
-          title={`click to mark ${
-            optimisticState === 'uncleared'
-              ? 'cleared'
-              : optimisticState === 'cleared'
-                ? 'reconciled'
-                : 'uncleared'
-          }`}
-          aria-label={`Cleared state: ${optimisticState}. Click to cycle.`}
+          title={cleared ? 'click to mark uncleared' : 'click to mark cleared'}
+          aria-label={`Cleared state: ${optimisticState}. Click to toggle.`}
           className={
             'inline-flex h-5 w-5 items-center justify-center rounded-full transition-all duration-120 ease-swift ' +
-            (reconciled
-              ? 'bg-stat-6 text-[#04140A] hover:scale-110'
-              : cleared
-                ? 'bg-credit text-[#04140A] hover:scale-110'
-                : 'border border-border-strong hover:border-accent hover:bg-accent/20')
+            (cleared
+              ? 'bg-credit text-[#04140A] hover:scale-110'
+              : 'border border-border-strong hover:border-accent hover:bg-accent/20')
           }
         >
-          {reconciled ? (
-            <Check size={10} strokeWidth={3} />
-          ) : cleared ? (
-            <Check size={10} strokeWidth={3} />
-          ) : null}
+          {cleared && <Check size={10} strokeWidth={3} />}
         </button>
       </td>
       <td className="px-3 py-2 text-text-secondary">{row.txnDate}</td>

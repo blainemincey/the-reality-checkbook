@@ -29,11 +29,7 @@ export const accountTypeEnum = pgEnum('account_type', [
   'retirement',
 ]);
 
-export const clearedStateEnum = pgEnum('cleared_state', [
-  'uncleared',
-  'cleared',
-  'reconciled',
-]);
+export const clearedStateEnum = pgEnum('cleared_state', ['uncleared', 'cleared']);
 
 export const categoryKindEnum = pgEnum('category_kind', ['expense', 'income', 'transfer']);
 

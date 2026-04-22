@@ -43,6 +43,13 @@
       "when": 1776870677410,
       "tag": "0005_expand_txn_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776883292154,
+      "tag": "0006_drop_reconciled_state",
+      "breakpoints": true
     }
   ]
 }

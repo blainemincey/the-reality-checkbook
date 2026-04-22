@@ -281,9 +281,13 @@ async function main(): Promise<void> {
     const typeStr = String(r[TYPE] ?? '').trim().toLowerCase();
     const kind: TxnKind = TXN_TYPE_TO_KIND[typeStr] ?? 'other';
 
-    const cleared = String(r[CLEARED] ?? '').trim().toLowerCase() === 'yes';
-    const reconciled =
+    // 'Reconciled' and 'Cleared' in the sheet both map to our single
+    // cleared state — we collapsed the 3-value enum to 2.
+    const clearedFlag = String(r[CLEARED] ?? '').trim().toLowerCase() === 'yes';
+    const reconciledFlag =
       RECONCILED >= 0 && String(r[RECONCILED] ?? '').trim().toLowerCase() === 'yes';
+    const cleared = clearedFlag || reconciledFlag;
+
     const payeeName = String(r[PAYEE] ?? '').trim();
     const checkNum = CHECK >= 0 ? String(r[CHECK] ?? '').trim() : '';
     const memo = NOTES >= 0 ? String(r[NOTES] ?? '').trim() : '';
@@ -297,7 +301,7 @@ async function main(): Promise<void> {
       payeeId: payeeName ? payeeIdByName.get(payeeName.toLowerCase()) ?? null : null,
       checkNumber: checkNum || null,
       memo: memo || null,
-      clearedState: reconciled ? 'reconciled' : cleared ? 'cleared' : 'uncleared',
+      clearedState: cleared ? 'cleared' : 'uncleared',
       isBackfill: true,
     });
     count++;

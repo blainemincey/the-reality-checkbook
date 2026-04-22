@@ -6,7 +6,7 @@ export interface LedgerTransaction {
   readonly id: string;
   readonly txnDate: IsoDate;
   readonly amount: Cash;
-  readonly clearedState: 'uncleared' | 'cleared' | 'reconciled';
+  readonly clearedState: 'uncleared' | 'cleared';
 }
 
 export interface AccountOpening {
@@ -119,8 +119,9 @@ export interface ReconciliationDelta {
 }
 
 /**
- * Compare the sum of cleared+reconciled transactions through statement_date (plus opening)
- * against the statement's ending balance. Delta is expected - statement; zero means balanced.
+ * Compare the sum of cleared transactions through statement_date (plus
+ * opening) against the statement's ending balance. Delta is
+ * expected − statement; zero means balanced.
  */
 export function reconciliationDelta(
   account: AccountOpening,
@@ -132,7 +133,7 @@ export function reconciliationDelta(
     (t) =>
       t.txnDate >= account.openingDate &&
       t.txnDate <= statementDate &&
-      (t.clearedState === 'cleared' || t.clearedState === 'reconciled'),
+      t.clearedState === 'cleared',
   );
   const expectedBalance = clearedThrough.reduce(
     (acc, t) => acc.add(t.amount),

@@ -6,7 +6,7 @@ import { X } from 'lucide-react';
 import { Combobox } from '@/ui/components/combobox';
 import { updateTransactionAction, type UpdateTxnInput } from './txn-actions';
 
-type ClearedState = 'uncleared' | 'cleared' | 'reconciled';
+type ClearedState = 'uncleared' | 'cleared';
 type TxnKind =
   | 'deposit' | 'payment' | 'bill_pay' | 'check' | 'atm' | 'interest'
   | 'dividend' | 'transfer' | 'tax_payment' | 'fee' | 'refund' | 'other';
@@ -147,21 +147,25 @@ export function EditTransactionDialog({ txn, payees, openingDate, onClose }: Pro
             />
           </Field>
 
-          <Field label="Cleared state">
-            <select
-              value={state.clearedState}
-              onChange={(e) =>
-                setState((s) => ({
-                  ...s,
-                  clearedState: e.target.value as ClearedState,
-                }))
-              }
-              className="input"
-            >
-              <option value="uncleared">Uncleared</option>
-              <option value="cleared">Cleared</option>
-              <option value="reconciled">Reconciled</option>
-            </select>
+          <Field label="Cleared">
+            <label className="flex h-[38px] cursor-pointer items-center gap-2 rounded-md border border-border-strong bg-surface px-3 text-sm">
+              <input
+                type="checkbox"
+                className="checkbox"
+                checked={state.clearedState === 'cleared'}
+                onChange={(e) =>
+                  setState((s) => ({
+                    ...s,
+                    clearedState: e.target.checked ? 'cleared' : 'uncleared',
+                  }))
+                }
+              />
+              <span className="text-text-secondary">
+                {state.clearedState === 'cleared'
+                  ? 'Cleared by the bank'
+                  : 'Outstanding / uncleared'}
+              </span>
+            </label>
           </Field>
 
           <Field label="Payee" className="md:col-span-2">
