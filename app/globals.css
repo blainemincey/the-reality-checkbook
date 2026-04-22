@@ -19,6 +19,18 @@
   --color-debit: 163 58 47; /* #A33A2F deep terracotta */
   --color-accent: 58 91 220; /* #3A5BDC */
   --color-reconciled: 244 242 236; /* #F4F2EC */
+
+  /* Institution tile palette — 8 hand-picked hues, usable in both themes.
+     Each index is used as rgb(var(--badge-N) / 0.12) for the wash and at
+     full opacity for the letter. */
+  --badge-0: 179 94 31;    /* amber    */
+  --badge-1: 46 130 87;    /* emerald  */
+  --badge-2: 42 122 130;   /* teal     */
+  --badge-3: 74 88 184;    /* indigo   */
+  --badge-4: 122 79 179;   /* violet   */
+  --badge-5: 179 74 100;   /* rose     */
+  --badge-6: 107 122 42;   /* olive    */
+  --badge-7: 168 58 58;    /* crimson  */
 }
 
 [data-theme='dark'] {
@@ -32,6 +44,16 @@
   --color-debit: 230 133 119; /* #E68577 */
   --color-accent: 124 147 240; /* #7C93F0 */
   --color-reconciled: 30 30 34;
+
+  /* Institution tile palette — dark variants lifted for contrast */
+  --badge-0: 217 140 82;   /* amber    */
+  --badge-1: 91 164 127;   /* emerald  */
+  --badge-2: 87 163 170;   /* teal     */
+  --badge-3: 128 144 216;  /* indigo   */
+  --badge-4: 157 130 208;  /* violet   */
+  --badge-5: 210 127 145;  /* rose     */
+  --badge-6: 154 167 87;   /* olive    */
+  --badge-7: 212 106 106;  /* crimson  */
 }
 
 @media (prefers-color-scheme: dark) {

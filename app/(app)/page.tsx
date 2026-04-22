@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { requireAuth } from '@/lib/auth/guards';
 import { listAccountsForUser } from '@/server/accounts';
 import { Amount } from '@/ui/components/amount';
+import { InstitutionBadge } from '@/ui/components/institution-badge';
 
 export default async function AccountsListPage() {
   const { user } = await requireAuth();
@@ -27,12 +28,17 @@ export default async function AccountsListPage() {
             <li key={a.id}>
               <Link
                 href={`/accounts/${a.id}`}
-                className="flex items-center justify-between px-4 py-3 transition-colors duration-120 ease-swift hover:bg-canvas"
+                className="flex items-center justify-between gap-3 px-4 py-3 transition-colors duration-120 ease-swift hover:bg-canvas"
               >
-                <div>
-                  <div className="text-sm font-medium">{a.name}</div>
-                  <div className="mt-0.5 text-xs text-text-tertiary">
-                    {a.accountType.replace('_', ' ')} · opened {a.openingDate}
+                <div className="flex min-w-0 items-center gap-3">
+                  <InstitutionBadge institution={a.institution} fallback={a.name} size="md" />
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{a.name}</div>
+                    <div className="mt-0.5 text-xs text-text-tertiary">
+                      {a.institution ? `${a.institution} · ` : ''}
+                      {a.accountType.replace('_', ' ')}
+                      {a.last4 ? ` ····${a.last4}` : ''}
+                    </div>
                   </div>
                 </div>
                 <Amount value={a.currentBalance} className="text-sm" />

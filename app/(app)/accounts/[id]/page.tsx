@@ -8,6 +8,7 @@ import { and, eq } from 'drizzle-orm';
 import { Cash } from '@/money';
 import { registerRows } from '@/domain/accounts';
 import { Amount } from '@/ui/components/amount';
+import { InstitutionBadge } from '@/ui/components/institution-badge';
 import { formatCash } from '@/money';
 
 export default async function AccountPage({ params }: { params: Promise<{ id: string }> }) {
@@ -43,13 +44,18 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
         >
           ← Accounts
         </Link>
-        <div className="mt-2 flex items-baseline justify-between">
-          <div>
-            <h1 className="text-lg font-medium">{account.name}</h1>
-            <p className="mt-0.5 text-xs text-text-tertiary">
-              {account.accountType.replace('_', ' ')} · opened {account.openingDate} at{' '}
-              {formatCash(Cash.of(account.openingBalance))}
-            </p>
+        <div className="mt-2 flex items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <InstitutionBadge institution={account.institution} fallback={account.name} size="lg" />
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-medium">{account.name}</h1>
+              <p className="mt-0.5 text-xs text-text-tertiary">
+                {account.institution ? `${account.institution} · ` : ''}
+                {account.accountType.replace('_', ' ')}
+                {account.last4 ? ` ····${account.last4}` : ''} · opened{' '}
+                {account.openingDate} at {formatCash(Cash.of(account.openingBalance))}
+              </p>
+            </div>
           </div>
           <Amount value={currentBalance} className="text-lg" />
         </div>
