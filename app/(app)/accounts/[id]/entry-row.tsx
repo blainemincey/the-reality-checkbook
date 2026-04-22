@@ -133,7 +133,7 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
             min={openingDate}
             value={state.txnDate}
             onChange={(e) => setState((s) => ({ ...s, txnDate: e.target.value }))}
-            className="input !py-1.5"
+            className="input"
           />
         </label>
 
@@ -171,7 +171,7 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
                 kind: (e.target.value || null) as TxnKind | null,
               }))
             }
-            className="input !py-1.5"
+            className="input"
           >
             <option value="">Auto</option>
             {KIND_OPTIONS.map((k) => (
@@ -200,7 +200,7 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
               }))
             }
             disabled={paymentFocused}
-            className={`input amount !py-1.5 ${depositFocused ? 'border-credit' : ''}`}
+            className={`input amount ${depositFocused ? 'border-credit' : ''}`}
           />
         </label>
 
@@ -222,7 +222,7 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
               }))
             }
             disabled={depositFocused}
-            className={`input amount !py-1.5 ${paymentFocused ? 'border-debit' : ''}`}
+            className={`input amount ${paymentFocused ? 'border-debit' : ''}`}
           />
         </label>
 
@@ -231,7 +231,7 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
           <span className="text-[10px] uppercase tracking-wider text-transparent md:block">
             &nbsp;
           </span>
-          <button type="submit" disabled={saving} className="btn-primary !py-1.5">
+          <button type="submit" disabled={saving} className="btn-primary h-[2.375rem]">
             <Check size={14} strokeWidth={2.5} />
             {saving ? 'Saving…' : 'Add'}
           </button>
@@ -248,7 +248,7 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
               placeholder="optional"
               value={state.memo}
               onChange={(e) => setState((s) => ({ ...s, memo: e.target.value }))}
-              className="input !py-1.5"
+              className="input"
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -261,7 +261,7 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
               inputMode="numeric"
               value={state.checkNumber}
               onChange={(e) => setState((s) => ({ ...s, checkNumber: e.target.value }))}
-              className="input !py-1.5"
+              className="input"
             />
           </label>
           <label className="flex cursor-pointer items-center gap-2 self-center pt-5 text-xs text-text-secondary">

@@ -105,12 +105,22 @@ body {
   border-radius: 8px;
   border: 1px solid rgb(var(--color-border-strong));
   background: rgb(var(--color-surface));
-  padding: 0.5rem 0.75rem;
+  padding: 0 0.75rem;
   font-size: 0.875rem;
+  line-height: 1.25rem;
   color: rgb(var(--color-text));
+  box-sizing: border-box;
   transition: border-color 120ms cubic-bezier(0.2, 0, 0, 1),
     box-shadow 120ms cubic-bezier(0.2, 0, 0, 1),
     background 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+/* Normalize input height across text/date/select; textareas stay multi-line. */
+.input:not(textarea) {
+  height: 2.375rem; /* 38px */
+}
+textarea.input {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 .input::placeholder {
   color: rgb(var(--color-text-tertiary));
