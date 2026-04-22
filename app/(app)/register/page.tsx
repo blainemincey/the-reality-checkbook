@@ -3,7 +3,7 @@ import { and, eq } from 'drizzle-orm';
 import { requireAuth } from '@/lib/auth/guards';
 import { db } from '@/db/client';
 import { accounts, transactions } from '@/db/schema';
-import { Cash, formatCash } from '@/money';
+import { Cash, formatCash, formatSigned } from '@/money';
 import { unifiedLedger } from '@/domain/unified-ledger';
 import { StatCard } from '@/ui/components/stat-card';
 import { resolveLogoFilename } from '@/ui/components/institution-logos';
@@ -78,6 +78,9 @@ export default async function RegisterPage() {
   const combinedCurrent =
     ledger.length > 0 ? ledger[ledger.length - 1]!.runningBalance : combinedOpening;
 
+  const uncleared = rows.filter((r) => r.clearedState === 'uncleared');
+  const unclearedSum = Cash.sum(uncleared.map((r) => Cash.of(r.amount)));
+
   const accountFilters = acctRows.map((a) => ({ id: a.id, name: a.name }));
 
   return (
@@ -104,10 +107,14 @@ export default async function RegisterPage() {
           tone={2}
         />
         <StatCard
-          label="Combined opening"
-          value={formatCash(combinedOpening)}
-          subtitle="sum of account opening balances"
-          tone={7}
+          label="Uncleared"
+          value={String(uncleared.length)}
+          subtitle={
+            uncleared.length === 0
+              ? 'nothing outstanding'
+              : `${formatSigned(unclearedSum)} pending`
+          }
+          tone={4}
         />
       </section>
 
