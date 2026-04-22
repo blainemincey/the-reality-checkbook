@@ -4,7 +4,7 @@ import { writeFile, unlink, mkdir, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { revalidatePath } from 'next/cache';
 import { requireAuth } from '@/lib/auth/guards';
-import { institutionSlug } from '@/ui/components/institution-badge';
+import { institutionSlug } from '@/ui/components/institution-logos';
 
 const MAX_IMAGE_BYTES = 256 * 1024; // 256 KB — enough for typical brand assets
 const FETCH_TIMEOUT_MS = 10_000;

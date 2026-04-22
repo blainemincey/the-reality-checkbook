@@ -12,6 +12,7 @@ import { balanceTimeSeries } from '@/domain/charts';
 import { formatCash } from '@/money';
 import { Amount } from '@/ui/components/amount';
 import { InstitutionBadge } from '@/ui/components/institution-badge';
+import { resolveLogoFilename } from '@/ui/components/institution-logos';
 import { AccountTypeIcon, accountTypeLabel } from '@/ui/components/account-type-icon';
 import { BalanceChart } from '@/ui/components/charts/balance-chart';
 import { StatCard } from '@/ui/components/stat-card';
@@ -95,6 +96,7 @@ export default async function AccountPage({
                 institution={account.institution}
                 fallback={account.name}
                 size="lg"
+                logoFilename={resolveLogoFilename(account.institution, account.name)}
               />
             </Link>
             <div className="min-w-0">

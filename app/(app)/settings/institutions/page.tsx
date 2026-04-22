@@ -2,11 +2,8 @@ import { and, eq, isNotNull, sql } from 'drizzle-orm';
 import { requireAuth } from '@/lib/auth/guards';
 import { db } from '@/db/client';
 import { accounts } from '@/db/schema';
-import {
-  getAvailableLogos,
-  institutionSlug,
-  InstitutionBadge,
-} from '@/ui/components/institution-badge';
+import { InstitutionBadge } from '@/ui/components/institution-badge';
+import { getAvailableLogos, institutionSlug } from '@/ui/components/institution-logos';
 import { InstitutionUploader } from './institution-uploader';
 
 export default async function InstitutionsSettingsPage() {
@@ -23,12 +20,16 @@ export default async function InstitutionsSettingsPage() {
     .orderBy(accounts.institution);
 
   const available = getAvailableLogos();
-  const rowsWithLogo = rows.map((r) => ({
-    institution: r.institution ?? '',
-    slug: institutionSlug(r.institution ?? ''),
-    count: r.count,
-    hasLogo: available.has(institutionSlug(r.institution ?? '')),
-  }));
+  const rowsWithLogo = rows.map((r) => {
+    const slug = institutionSlug(r.institution ?? '');
+    return {
+      institution: r.institution ?? '',
+      slug,
+      count: r.count,
+      hasLogo: available.has(slug),
+      logoFilename: available.get(slug),
+    };
+  });
 
   return (
     <>
@@ -63,6 +64,7 @@ export default async function InstitutionsSettingsPage() {
                 institution={r.institution}
                 fallback={r.institution}
                 size="lg"
+                logoFilename={r.logoFilename}
               />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-medium">{r.institution}</div>

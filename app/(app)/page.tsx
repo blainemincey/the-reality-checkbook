@@ -9,6 +9,7 @@ import { computeDashboardStats } from '@/server/stats';
 import { Cash, formatCash, formatSigned } from '@/money';
 import { Amount } from '@/ui/components/amount';
 import { InstitutionBadge } from '@/ui/components/institution-badge';
+import { resolveLogoFilename } from '@/ui/components/institution-logos';
 import { AccountTypeIcon, accountTypeLabel } from '@/ui/components/account-type-icon';
 import { BalanceSparkline } from '@/ui/components/charts/balance-sparkline';
 import { BalanceChart } from '@/ui/components/charts/balance-chart';
@@ -184,7 +185,12 @@ function AccountList({ accounts }: { accounts: AccountWithBalance[] }) {
                 className="flex items-center justify-between gap-4 px-4 py-3 transition-colors duration-120 ease-swift hover:bg-surface-elevated"
               >
                 <div className="flex min-w-0 items-center gap-3">
-                  <InstitutionBadge institution={a.institution} fallback={a.name} size="md" />
+                  <InstitutionBadge
+                    institution={a.institution}
+                    fallback={a.name}
+                    size="md"
+                    logoFilename={resolveLogoFilename(a.institution, a.name)}
+                  />
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium">{a.name}</div>
                     <div className="mt-0.5 flex items-center gap-1.5 text-xs text-text-tertiary">
