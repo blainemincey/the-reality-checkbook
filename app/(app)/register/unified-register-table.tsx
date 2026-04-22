@@ -1,11 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useMemo, useOptimistic, useState, useTransition } from 'react';
+import { Check, ChevronLeft, ChevronRight, Pencil, Trash2, X } from 'lucide-react';
 import { Cash } from '@/money';
 import { Amount } from '@/ui/components/amount';
 import { InstitutionBadge } from '@/ui/components/institution-badge';
+import {
+  toggleClearedStateAction,
+  deleteTransactionAction,
+} from '../accounts/[id]/txn-actions';
+import {
+  EditTransactionDialog,
+  type EditableTxn,
+} from '../accounts/[id]/edit-transaction-dialog';
 
 type ClearedState = 'uncleared' | 'cleared';
 type TxnKind =
@@ -17,9 +25,11 @@ export interface UnifiedRegisterRow {
   accountId: string;
   accountName: string;
   accountInstitution: string | null;
+  accountOpeningDate: string;
   accountLogoFilename: string | undefined;
   txnDate: string;
   payee: string | null;
+  payeeId: string | null;
   memo: string | null;
   checkNumber: string | null;
   kind: TxnKind | null;
@@ -31,6 +41,7 @@ export interface UnifiedRegisterRow {
 interface Props {
   rows: readonly UnifiedRegisterRow[];
   accounts: readonly { id: string; name: string }[];
+  payees: readonly { id: string; name: string }[];
 }
 
 const PAGE_SIZE_OPTIONS = [25, 50, 75, 100] as const;
@@ -38,10 +49,14 @@ type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
 const PAGE_SIZE_STORAGE_KEY = 'cr.unified-register.pageSize';
 const ACCOUNT_FILTER_STORAGE_KEY = 'cr.unified-register.accountFilter';
 
-export function UnifiedRegisterTable({ rows, accounts }: Props) {
+export function UnifiedRegisterTable({ rows, accounts, payees }: Props) {
   const [pageSize, setPageSize] = useState<PageSize>(25);
   const [page, setPage] = useState(1);
   const [accountFilter, setAccountFilter] = useState<'all' | string>('all');
+  const [editing, setEditing] = useState<{
+    txn: EditableTxn;
+    openingDate: string;
+  } | null>(null);
 
   useEffect(() => {
     const storedSize = window.localStorage.getItem(PAGE_SIZE_STORAGE_KEY);
@@ -77,12 +92,18 @@ export function UnifiedRegisterTable({ rows, accounts }: Props) {
     if (page > totalPages) setPage(totalPages);
   }, [page, totalPages]);
 
+  const openEdit = (r: UnifiedRegisterRow) => {
+    setEditing({ txn: toEditable(r), openingDate: r.accountOpeningDate });
+  };
+
   return (
     <section className="card overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex items-baseline gap-3">
           <h2 className="text-sm font-semibold">Unified ledger</h2>
-          <span className="text-[11px] text-text-tertiary">newest first</span>
+          <span className="text-[11px] text-text-tertiary">
+            newest first · click the status dot to toggle cleared
+          </span>
         </div>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-1.5 text-[11px] text-text-tertiary">
@@ -138,72 +159,13 @@ export function UnifiedRegisterTable({ rows, accounts }: Props) {
               <th className="w-32 px-3 py-2 text-right font-medium">
                 Combined balance
               </th>
+              <th className="w-16 px-2 py-2" aria-label="actions" />
             </tr>
           </thead>
           <tbody>
-            {pageRows.map((r) => {
-              const amount = Cash.of(r.amount);
-              const isPayment = amount.isNegative();
-              const cleared = r.clearedState === 'cleared';
-              return (
-                <tr
-                  key={r.id}
-                  className="border-b border-border last:border-b-0 transition-colors hover:bg-surface-elevated"
-                >
-                  <td className="px-3 py-2 text-center">
-                    {cleared ? (
-                      <span
-                        className="inline-block h-2 w-2 rounded-full bg-credit"
-                        title="cleared"
-                      />
-                    ) : (
-                      <span
-                        className="inline-block h-2 w-2 rounded-full border border-border-strong"
-                        title="uncleared"
-                      />
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-text-secondary">{r.txnDate}</td>
-                  <td className="px-3 py-2">
-                    <Link
-                      href={`/accounts/${r.accountId}`}
-                      className="inline-flex min-w-0 items-center gap-2 no-underline hover:underline"
-                    >
-                      <InstitutionBadge
-                        institution={r.accountInstitution}
-                        fallback={r.accountName}
-                        size="sm"
-                        logoFilename={r.accountLogoFilename}
-                      />
-                      <span className="truncate text-xs text-text-secondary">
-                        {r.accountName}
-                      </span>
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2 text-xs capitalize text-text-tertiary">
-                    {r.kind ? r.kind.replace('_', ' ') : '—'}
-                  </td>
-                  <td className="px-3 py-2">
-                    <div className="truncate">{r.payee || '—'}</div>
-                    {(r.memo || r.checkNumber) && (
-                      <div className="mt-0.5 truncate text-[11px] text-text-tertiary">
-                        {r.checkNumber && <span className="mr-2">#{r.checkNumber}</span>}
-                        {r.memo}
-                      </div>
-                    )}
-                  </td>
-                  <td className="amount px-3 py-2 text-debit">
-                    {isPayment ? amount.abs().toFixed(2) : ''}
-                  </td>
-                  <td className="amount px-3 py-2 text-credit">
-                    {!isPayment && !amount.isZero() ? amount.toFixed(2) : ''}
-                  </td>
-                  <td className="px-3 py-2 text-right">
-                    <Amount value={Cash.of(r.runningBalance)} />
-                  </td>
-                </tr>
-              );
-            })}
+            {pageRows.map((r) => (
+              <Row key={r.id} row={r} onEdit={() => openEdit(r)} />
+            ))}
           </tbody>
         </table>
       </div>
@@ -241,6 +203,169 @@ export function UnifiedRegisterTable({ rows, accounts }: Props) {
           </div>
         )}
       </div>
+
+      {editing && (
+        <EditTransactionDialog
+          txn={editing.txn}
+          payees={payees}
+          openingDate={editing.openingDate}
+          onClose={() => setEditing(null)}
+        />
+      )}
     </section>
   );
+}
+
+function Row({
+  row,
+  onEdit,
+}: {
+  row: UnifiedRegisterRow;
+  onEdit: () => void;
+}) {
+  const [optimisticState, setOptimisticState] = useOptimistic<
+    ClearedState,
+    ClearedState
+  >(row.clearedState, (_, next) => next);
+  const [pending, startTransition] = useTransition();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+
+  const amount = Cash.of(row.amount);
+  const isPayment = amount.isNegative();
+  const cleared = optimisticState === 'cleared';
+
+  const toggle = () => {
+    const next: ClearedState = cleared ? 'uncleared' : 'cleared';
+    startTransition(async () => {
+      setOptimisticState(next);
+      await toggleClearedStateAction(row.id);
+    });
+  };
+
+  const handleDelete = () => {
+    startTransition(async () => {
+      await deleteTransactionAction(row.id);
+    });
+  };
+
+  return (
+    <tr className="group border-b border-border last:border-b-0 transition-colors hover:bg-surface-elevated">
+      <td className="px-3 py-2 text-center">
+        <button
+          type="button"
+          onClick={toggle}
+          disabled={pending}
+          title={cleared ? 'click to mark uncleared' : 'click to mark cleared'}
+          aria-label={`Cleared state: ${optimisticState}. Click to toggle.`}
+          className={
+            'inline-flex h-5 w-5 items-center justify-center rounded-full transition-all duration-120 ease-swift ' +
+            (cleared
+              ? 'bg-credit text-[#04140A] hover:scale-110'
+              : 'border border-border-strong hover:border-accent hover:bg-accent/20')
+          }
+        >
+          {cleared && <Check size={10} strokeWidth={3} />}
+        </button>
+      </td>
+      <td className="px-3 py-2 text-text-secondary">{row.txnDate}</td>
+      <td className="px-3 py-2">
+        <Link
+          href={`/accounts/${row.accountId}`}
+          className="inline-flex min-w-0 items-center gap-2 no-underline hover:underline"
+        >
+          <InstitutionBadge
+            institution={row.accountInstitution}
+            fallback={row.accountName}
+            size="sm"
+            logoFilename={row.accountLogoFilename}
+          />
+          <span className="truncate text-xs text-text-secondary">
+            {row.accountName}
+          </span>
+        </Link>
+      </td>
+      <td className="px-3 py-2 text-xs capitalize text-text-tertiary">
+        {row.kind ? row.kind.replace('_', ' ') : '—'}
+      </td>
+      <td className="px-3 py-2">
+        <div className="truncate">{row.payee || '—'}</div>
+        {(row.memo || row.checkNumber) && (
+          <div className="mt-0.5 truncate text-[11px] text-text-tertiary">
+            {row.checkNumber && <span className="mr-2">#{row.checkNumber}</span>}
+            {row.memo}
+          </div>
+        )}
+      </td>
+      <td className="amount px-3 py-2 text-debit">
+        {isPayment ? amount.abs().toFixed(2) : ''}
+      </td>
+      <td className="amount px-3 py-2 text-credit">
+        {!isPayment && !amount.isZero() ? amount.toFixed(2) : ''}
+      </td>
+      <td className="px-3 py-2 text-right">
+        <Amount value={Cash.of(row.runningBalance)} />
+      </td>
+      <td className="relative px-2 py-2 text-right">
+        {confirmingDelete ? (
+          <div className="flex items-center justify-end gap-1">
+            <button
+              type="button"
+              onClick={handleDelete}
+              disabled={pending}
+              className="btn-ghost !py-1 !px-1.5 text-debit"
+              title="Confirm delete"
+            >
+              <Check size={12} strokeWidth={2.5} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(false)}
+              className="btn-ghost !py-1 !px-1.5"
+              title="Cancel"
+            >
+              <X size={12} strokeWidth={2.5} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-120 ease-swift group-hover:opacity-100">
+            <button
+              type="button"
+              onClick={onEdit}
+              className="btn-ghost !py-1 !px-1.5"
+              title="Edit"
+              aria-label="Edit"
+            >
+              <Pencil size={12} strokeWidth={2} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(true)}
+              className="btn-ghost !py-1 !px-1.5 text-debit"
+              title="Delete"
+              aria-label="Delete"
+            >
+              <Trash2 size={12} strokeWidth={2} />
+            </button>
+          </div>
+        )}
+      </td>
+    </tr>
+  );
+}
+
+function toEditable(r: UnifiedRegisterRow): EditableTxn {
+  const amount = Cash.of(r.amount);
+  const isPayment = amount.isNegative();
+  return {
+    id: r.id,
+    txnDate: r.txnDate,
+    payeeName: r.payee ?? '',
+    payeeId: r.payeeId,
+    kind: r.kind,
+    depositAmount: isPayment || amount.isZero() ? '' : amount.toFixed(2),
+    paymentAmount: isPayment ? amount.abs().toFixed(2) : '',
+    memo: r.memo ?? '',
+    checkNumber: r.checkNumber ?? '',
+    clearedState: r.clearedState,
+  };
 }

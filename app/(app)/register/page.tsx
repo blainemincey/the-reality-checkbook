@@ -57,9 +57,11 @@ export default async function RegisterPage() {
       accountId: r.accountId,
       accountName: acct.name,
       accountInstitution: acct.institution,
+      accountOpeningDate: acct.openingDate,
       accountLogoFilename: resolveLogoFilename(acct.institution, acct.name),
       txnDate: r.txnDate,
       payee: raw.payee,
+      payeeId: raw.payeeId,
       memo: raw.memo,
       checkNumber: raw.checkNumber,
       kind: raw.kind,
@@ -139,7 +141,11 @@ export default async function RegisterPage() {
           </p>
         </div>
       ) : (
-        <UnifiedRegisterTable rows={rows} accounts={accountFilters} />
+        <UnifiedRegisterTable
+          rows={rows}
+          accounts={accountFilters}
+          payees={payees.map((p) => ({ id: p.id, name: p.name }))}
+        />
       )}
     </main>
   );
