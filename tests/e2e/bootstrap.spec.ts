@@ -70,9 +70,10 @@ test.describe('bootstrap: paste → preview → commit → register', () => {
 
     // Register shows 12 rows; it's reverse-chronological (newest-first), so
     // the latest-dated row — which carries the final running balance —
-    // appears FIRST in the table body.
+    // appears FIRST in the table body. Balance is the 7th cell (the 8th and
+    // final cell holds the row action buttons).
     const bodyRows = page.locator('table tbody tr');
     await expect(bodyRows).toHaveCount(12);
-    await expect(bodyRows.first().locator('td').last()).toContainText('$2,933.85');
+    await expect(bodyRows.first().locator('td').nth(6)).toContainText('$2,933.85');
   });
 });

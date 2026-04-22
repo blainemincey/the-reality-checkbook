@@ -16,6 +16,7 @@ import { AccountTypeIcon, accountTypeLabel } from '@/ui/components/account-type-
 import { BalanceChart } from '@/ui/components/charts/balance-chart';
 import { StatCard } from '@/ui/components/stat-card';
 import { EntryRow } from './entry-row';
+import { RegisterTable, type RegisterRowData } from './register-table';
 
 export default async function AccountPage({
   params,
@@ -183,89 +184,25 @@ export default async function AccountPage({
           </p>
         </div>
       ) : (
-        <section className="card overflow-hidden">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <h2 className="text-sm font-semibold">Register</h2>
-            <span className="text-[11px] text-text-tertiary">
-              newest first · {register.length} rows
-            </span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-dense">
-              <thead className="border-b border-border text-[11px] uppercase tracking-wider text-text-tertiary">
-                <tr>
-                  <th className="w-10 px-3 py-2 text-center font-medium">✓</th>
-                  <th className="w-24 px-3 py-2 text-left font-medium">Date</th>
-                  <th className="w-28 px-3 py-2 text-left font-medium">Kind</th>
-                  <th className="px-3 py-2 text-left font-medium">Payee / Memo</th>
-                  <th className="w-28 px-3 py-2 text-right font-medium">Payment</th>
-                  <th className="w-28 px-3 py-2 text-right font-medium">Deposit</th>
-                  <th className="w-32 px-3 py-2 text-right font-medium">Balance</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[...register].reverse().map((r) => {
-                  const raw = byId.get(r.transaction.id)!;
-                  const isPayment = r.transaction.amount.isNegative();
-                  const cleared =
-                    raw.clearedState === 'cleared' || raw.clearedState === 'reconciled';
-                  const reconciled = raw.clearedState === 'reconciled';
-                  return (
-                    <tr
-                      key={r.transaction.id}
-                      className="border-b border-border last:border-b-0 transition-colors hover:bg-surface-elevated"
-                    >
-                      <td className="px-3 py-2 text-center">
-                        {reconciled ? (
-                          <span
-                            className="inline-block h-2 w-2 rounded-full bg-stat-6"
-                            title="reconciled"
-                          />
-                        ) : cleared ? (
-                          <span
-                            className="inline-block h-2 w-2 rounded-full bg-credit"
-                            title="cleared"
-                          />
-                        ) : (
-                          <span
-                            className="inline-block h-2 w-2 rounded-full border border-border-strong"
-                            title="uncleared"
-                          />
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-text-secondary">{r.transaction.txnDate}</td>
-                      <td className="px-3 py-2 text-xs capitalize text-text-tertiary">
-                        {raw.kind ? raw.kind.replace('_', ' ') : '—'}
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="truncate">{raw.payee || '—'}</div>
-                        {(raw.memo || raw.checkNumber) && (
-                          <div className="mt-0.5 truncate text-[11px] text-text-tertiary">
-                            {raw.checkNumber && (
-                              <span className="mr-2">#{raw.checkNumber}</span>
-                            )}
-                            {raw.memo}
-                          </div>
-                        )}
-                      </td>
-                      <td className="amount px-3 py-2 text-debit">
-                        {isPayment ? r.transaction.amount.abs().toFixed(2) : ''}
-                      </td>
-                      <td className="amount px-3 py-2 text-credit">
-                        {!isPayment && !r.transaction.amount.isZero()
-                          ? r.transaction.amount.toFixed(2)
-                          : ''}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        <Amount value={r.runningBalance} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
+        <RegisterTable
+          openingDate={account.openingDate}
+          payees={payees.map((p) => ({ id: p.id, name: p.name }))}
+          rows={register.map<RegisterRowData>((r) => {
+            const raw = byId.get(r.transaction.id)!;
+            return {
+              id: raw.id,
+              txnDate: raw.txnDate,
+              payee: raw.payee,
+              memo: raw.memo,
+              checkNumber: raw.checkNumber,
+              amount: raw.amount,
+              kind: raw.kind,
+              clearedState: raw.clearedState,
+              payeeId: raw.payeeId,
+              runningBalance: r.runningBalance.toString(),
+            };
+          })}
+        />
       )}
     </main>
   );
