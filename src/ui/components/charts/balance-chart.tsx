@@ -59,7 +59,7 @@ export function BalanceChart({ data, height = 200 }: Props) {
   if (data.length < 2) {
     return (
       <div
-        className="flex items-center justify-center rounded-lg border border-border bg-surface text-xs text-text-tertiary"
+        className="flex items-center justify-center rounded-lg border border-dashed border-border text-xs text-text-tertiary"
         style={{ height }}
       >
         Add a few transactions to see the balance trend.
@@ -68,16 +68,13 @@ export function BalanceChart({ data, height = 200 }: Props) {
   }
 
   return (
-    <div
-      className="rounded-lg border border-border bg-surface p-3"
-      style={{ height: height + 16 }}
-    >
+    <div style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={[...data]} margin={{ top: 6, right: 8, bottom: 6, left: 8 }}>
           <defs>
             <linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgb(37,99,235)" stopOpacity={0.28} />
-              <stop offset="100%" stopColor="rgb(37,99,235)" stopOpacity={0} />
+              <stop offset="0%" stopColor="rgb(16,185,129)" stopOpacity={0.35} />
+              <stop offset="100%" stopColor="rgb(16,185,129)" stopOpacity={0} />
             </linearGradient>
           </defs>
           <CartesianGrid
@@ -100,11 +97,14 @@ export function BalanceChart({ data, height = 200 }: Props) {
             tickLine={false}
             width={56}
           />
-          <Tooltip content={<TooltipBody />} cursor={{ stroke: 'rgb(var(--color-border-strong))' }} />
+          <Tooltip
+            content={<TooltipBody />}
+            cursor={{ stroke: 'rgb(var(--color-border-strong))' }}
+          />
           <Area
             type="monotone"
             dataKey="balance"
-            stroke="rgb(37,99,235)"
+            stroke="rgb(16,185,129)"
             strokeWidth={2}
             fill="url(#balGrad)"
             isAnimationActive={false}

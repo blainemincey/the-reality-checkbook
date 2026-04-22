@@ -1,107 +1,177 @@
 import Link from 'next/link';
+import { and, eq } from 'drizzle-orm';
 import { Plus } from 'lucide-react';
 import { requireAuth } from '@/lib/auth/guards';
-import { listAccountsForUser, type AccountWithBalance } from '@/server/accounts';
-import { Cash, formatCash } from '@/money';
+import { db } from '@/db/client';
+import { accounts as accountsTable, transactions } from '@/db/schema';
+import { listAccountsForUser, isoToday, type AccountWithBalance } from '@/server/accounts';
+import { computeDashboardStats } from '@/server/stats';
+import { Cash, formatCash, formatSigned } from '@/money';
 import { Amount } from '@/ui/components/amount';
 import { InstitutionBadge } from '@/ui/components/institution-badge';
 import { AccountTypeIcon, accountTypeLabel } from '@/ui/components/account-type-icon';
 import { BalanceSparkline } from '@/ui/components/charts/balance-sparkline';
+import { BalanceChart } from '@/ui/components/charts/balance-chart';
+import { StatCard } from '@/ui/components/stat-card';
+import { combinedBalanceTimeSeries } from '@/domain/charts';
 
-export default async function AccountsListPage() {
+export default async function OverviewPage() {
   const { user } = await requireAuth();
-  const accounts = await listAccountsForUser(user.id);
+  const [accts, stats] = await Promise.all([
+    listAccountsForUser(user.id),
+    computeDashboardStats(user.id),
+  ]);
 
-  const total = Cash.sum(accounts.map((a) => a.currentBalance));
-  const checkingTotal = Cash.sum(
-    accounts.filter((a) => a.accountType === 'checking').map((a) => a.currentBalance),
-  );
-  const savingsTotal = Cash.sum(
-    accounts.filter((a) => a.accountType === 'savings').map((a) => a.currentBalance),
-  );
-  const creditTotal = Cash.sum(
-    accounts.filter((a) => a.accountType === 'credit_card').map((a) => a.currentBalance),
-  );
+  // Per-account ledgers for the combined balance chart
+  const allTxns = await db
+    .select()
+    .from(transactions)
+    .innerJoin(accountsTable, eq(accountsTable.id, transactions.accountId))
+    .where(and(eq(accountsTable.userId, user.id), eq(transactions.isDeleted, false)));
+  const byAccount = new Map<string, (typeof transactions.$inferSelect)[]>();
+  for (const r of allTxns) {
+    const acctId = r.accounts.id;
+    const arr = byAccount.get(acctId) ?? [];
+    arr.push(r.transactions);
+    byAccount.set(acctId, arr);
+  }
+  const ledgers = accts.map((a) => ({
+    account: { openingBalance: Cash.of(a.openingBalance), openingDate: a.openingDate },
+    transactions: (byAccount.get(a.id) ?? []).map((t) => ({
+      id: t.id,
+      txnDate: t.txnDate,
+      amount: Cash.of(t.amount),
+      clearedState: t.clearedState,
+    })),
+  }));
+  const combinedSeries = combinedBalanceTimeSeries(ledgers, isoToday());
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-10">
-      <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
+    <main className="mx-auto max-w-7xl px-6 py-10">
+      {/* Hero + headline */}
+      <section className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs uppercase tracking-wider text-text-tertiary">
-            {accounts.length === 0 ? 'Get started' : 'Overall'}
+          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-text-tertiary">
+            Net across accounts
           </p>
-          <div className="mt-1 flex items-baseline gap-3">
+          <div className="mt-2 flex items-baseline gap-3">
             <span
-              className={
-                'amount-display text-4xl ' +
-                (total.isNegative() ? 'text-debit' : 'text-text')
-              }
+              className={`amount-display text-5xl leading-none ${
+                stats.totalBalance.isNegative() ? 'text-debit' : 'text-stat-1'
+              }`}
             >
-              {formatCash(total)}
+              {formatCash(stats.totalBalance)}
             </span>
-            <span className="text-sm text-text-tertiary">
-              across {accounts.length} account{accounts.length === 1 ? '' : 's'}
+            <span className="text-xs text-text-tertiary">
+              {stats.accountCount} account{stats.accountCount === 1 ? '' : 's'} ·{' '}
+              {stats.txnCount} transactions
             </span>
           </div>
         </div>
         <Link href="/accounts/new" className="btn-primary">
-          <Plus size={14} strokeWidth={2} />
+          <Plus size={14} strokeWidth={2.5} />
           New account
         </Link>
-      </header>
+      </section>
 
-      {accounts.length > 0 && (
-        <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Rollup
+      {/* Stat grid */}
+      {accts.length > 0 && (
+        <section className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <StatCard
             label="Checking"
-            value={checkingTotal}
-            count={accounts.filter((a) => a.accountType === 'checking').length}
+            value={formatCash(stats.checkingBalance)}
+            subtitle="Cash + checking"
+            tone={2}
           />
-          <Rollup
-            label="Savings"
-            value={savingsTotal}
-            count={accounts.filter((a) => a.accountType === 'savings').length}
+          <StatCard
+            label="Deposits MTD"
+            value={formatCash(stats.depositsMtd)}
+            subtitle="Month-to-date income"
+            tone="credit"
           />
-          <Rollup
-            label="Credit"
-            value={creditTotal}
-            count={accounts.filter((a) => a.accountType === 'credit_card').length}
+          <StatCard
+            label="Payments MTD"
+            value={formatCash(stats.paymentsMtd)}
+            subtitle={
+              <span className={stats.cashflowMtd.isNegative() ? 'text-debit' : 'text-credit'}>
+                Net {formatSigned(stats.cashflowMtd)}
+              </span>
+            }
+            tone="debit"
+          />
+          <StatCard
+            label="Cleared"
+            value={`${stats.clearedPct}%`}
+            subtitle={`${stats.clearedCount} of ${stats.txnCount} txns`}
+            tone={6}
+          />
+
+          <StatCard
+            label="Uncleared"
+            value={String(stats.unclearedCount)}
+            subtitle={
+              stats.oldestUncleared
+                ? `Oldest ${stats.oldestUncleared.txnDate} · ${
+                    stats.oldestUncleared.payee ?? '—'
+                  }`
+                : 'none outstanding'
+            }
+            tone={4}
+          />
+          <StatCard
+            label="Top payee MTD"
+            value={stats.topPayeeMtd ? stats.topPayeeMtd.name : '—'}
+            subtitle={
+              stats.topPayeeMtd ? formatCash(stats.topPayeeMtd.total) : 'no payees yet'
+            }
+            tone={5}
+            className="[&_.stat-value]:text-base [&_.stat-value]:font-semibold"
+          />
+          <StatCard
+            label="Active payees MTD"
+            value={String(stats.activePayeesMtd)}
+            subtitle={`${stats.totalPayees} total on file`}
+            tone={7}
+          />
+          <StatCard
+            label="Credit balance"
+            value={formatCash(stats.creditBalance)}
+            subtitle={stats.creditBalance.isZero() ? 'no CC accounts' : 'on credit accounts'}
+            tone={8}
           />
         </section>
       )}
 
-      {accounts.length === 0 ? <EmptyState /> : <AccountList accounts={accounts} />}
-    </main>
-  );
-}
+      {/* Combined balance chart */}
+      {accts.length > 0 && (
+        <section className="mb-6 card p-4">
+          <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="text-sm font-semibold">Balance over time</h2>
+            <span className="text-[11px] text-text-tertiary">
+              combined across {stats.accountCount} account
+              {stats.accountCount === 1 ? '' : 's'}
+            </span>
+          </div>
+          <BalanceChart data={combinedSeries} height={220} />
+        </section>
+      )}
 
-function Rollup({ label, value, count }: { label: string; value: Cash; count: number }) {
-  if (count === 0) {
-    return (
-      <div className="rounded-lg border border-border bg-surface px-4 py-3 opacity-50">
-        <div className="text-xs uppercase tracking-wider text-text-tertiary">{label}</div>
-        <div className="mt-1 text-sm text-text-tertiary">—</div>
-      </div>
-    );
-  }
-  return (
-    <div className="rounded-lg border border-border bg-surface px-4 py-3">
-      <div className="flex items-center justify-between">
-        <span className="text-xs uppercase tracking-wider text-text-tertiary">{label}</span>
-        <span className="text-[10px] text-text-tertiary">
-          {count} account{count === 1 ? '' : 's'}
-        </span>
-      </div>
-      <Amount value={value} className="amount-display mt-1 block text-xl" />
-    </div>
+      {/* Accounts list */}
+      {accts.length === 0 ? <EmptyState /> : <AccountList accounts={accts} />}
+    </main>
   );
 }
 
 function AccountList({ accounts }: { accounts: AccountWithBalance[] }) {
   return (
-    <section>
-      <h2 className="mb-2 text-xs uppercase tracking-wider text-text-tertiary">Accounts</h2>
-      <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
+    <section className="card overflow-hidden">
+      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+        <h2 className="text-sm font-semibold">Accounts</h2>
+        <span className="text-[11px] text-text-tertiary">
+          {accounts.length} account{accounts.length === 1 ? '' : 's'}
+        </span>
+      </div>
+      <ul className="divide-y divide-border">
         {accounts.map((a) => {
           const first = a.series[0]?.balance ?? 0;
           const last = a.series[a.series.length - 1]?.balance ?? first;
@@ -111,7 +181,7 @@ function AccountList({ accounts }: { accounts: AccountWithBalance[] }) {
             <li key={a.id}>
               <Link
                 href={`/accounts/${a.id}`}
-                className="flex items-center justify-between gap-4 px-4 py-3 transition-colors duration-120 ease-swift hover:bg-canvas"
+                className="flex items-center justify-between gap-4 px-4 py-3 transition-colors duration-120 ease-swift hover:bg-surface-elevated"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <InstitutionBadge institution={a.institution} fallback={a.name} size="md" />
@@ -125,9 +195,9 @@ function AccountList({ accounts }: { accounts: AccountWithBalance[] }) {
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <BalanceSparkline data={a.series} trend={trend} />
-                  <Amount value={a.currentBalance} className="text-base font-medium" />
+                <div className="flex items-center gap-5">
+                  <BalanceSparkline data={a.series} trend={trend} width={110} height={30} />
+                  <Amount value={a.currentBalance} className="amount-display text-lg" />
                 </div>
               </Link>
             </li>
@@ -140,14 +210,14 @@ function AccountList({ accounts }: { accounts: AccountWithBalance[] }) {
 
 function EmptyState() {
   return (
-    <div className="rounded-lg border border-border bg-surface px-6 py-12 text-center">
-      <h2 className="text-sm font-medium">Start by creating an account.</h2>
-      <p className="mx-auto mt-2 max-w-sm text-sm text-text-secondary">
-        Set its opening balance from your statement, then paste any outstanding
-        transactions from your spreadsheet into the backfill grid.
+    <div className="card flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+      <h2 className="text-base font-semibold">Start by creating an account.</h2>
+      <p className="max-w-md text-sm text-text-secondary">
+        Set the opening balance from your statement, then paste in any outstanding
+        transactions from your spreadsheet.
       </p>
-      <Link href="/accounts/new" className="btn-primary mt-4">
-        <Plus size={14} strokeWidth={2} />
+      <Link href="/accounts/new" className="btn-primary">
+        <Plus size={14} strokeWidth={2.5} />
         Create first account
       </Link>
     </div>

@@ -3,116 +3,59 @@
 @tailwind utilities;
 
 /* --------------------------------------------------------------------------
-   Finance-tool aesthetic: ink chrome + crisp content, saturated money colors,
-   cool-leaning accent. Think Mercury/Ramp/YNAB — high contrast, clear
-   hierarchy, no warm muted tones.
+   Dark-only navy dashboard. Reference: MongoDB SA Calendar Analysis —
+   saturated rainbow numeric stats on deep slate/navy cards.
 
-   Every token is rgb-triplet so Tailwind's `rgb(var(...) / <alpha-value>)`
-   syntax works for transparency.
+   Light mode intentionally dropped. Bring it back if/when asked; for now,
+   one well-crafted dark theme beats two mediocre ones.
    -------------------------------------------------------------------------- */
 
-:root,
-[data-theme='light'] {
-  /* Content surface — clean white with a hint of cool */
-  --color-canvas: 249 250 251;      /* #F9FAFB  slate-50 */
-  --color-surface: 255 255 255;     /* #FFFFFF */
-  --color-border: 226 232 240;      /* #E2E8F0  slate-200 */
-  --color-border-strong: 203 213 225; /* #CBD5E1  slate-300 */
-  --color-text: 15 23 42;           /* #0F172A  slate-900 */
-  --color-text-secondary: 71 85 105; /* #475569 slate-600 */
-  --color-text-tertiary: 148 163 184; /* #94A3B8 slate-400 */
+:root {
+  /* Canvas / chrome / surfaces */
+  --color-canvas: 11 18 32;              /* #0B1220 deep navy */
+  --color-chrome: 6 10 19;               /* #060A13 near-black for header */
+  --color-chrome-text: 241 245 249;      /* slate-100 */
+  --color-chrome-muted: 148 163 184;     /* slate-400 */
+  --color-chrome-border: 30 41 59;       /* slate-800 */
+  --color-surface: 17 24 39;             /* slate-900 */
+  --color-surface-elevated: 30 41 59;    /* slate-800 */
+  --color-border: 30 41 59;              /* slate-800 */
+  --color-border-strong: 51 65 85;       /* slate-700 */
 
-  /* Chrome — the deep anchor (header / nav). Light theme keeps the chrome
-     dark for the finance-tool feel. Inverts in dark theme. */
-  --color-chrome: 11 18 32;         /* #0B1220 near-black, cool */
-  --color-chrome-text: 241 245 249; /* #F1F5F9 */
-  --color-chrome-muted: 148 163 184; /* #94A3B8 */
-  --color-chrome-border: 30 41 59;  /* #1E293B  slate-800 */
+  /* Text — slate-100/300/500 */
+  --color-text: 241 245 249;
+  --color-text-secondary: 203 213 225;
+  --color-text-tertiary: 100 116 139;
 
-  /* Money colors — saturated, unambiguous */
-  --color-credit: 5 150 105;        /* #059669  emerald-600 */
-  --color-debit: 220 38 38;         /* #DC2626  red-600 */
+  /* Money colors — lifted for dark bg */
+  --color-credit: 52 211 153;            /* emerald-400 */
+  --color-debit: 248 113 113;            /* red-400 */
 
-  /* Accent — electric cool blue */
-  --color-accent: 37 99 235;        /* #2563EB  blue-600 */
-  --color-accent-hover: 29 78 216;  /* #1D4ED8  blue-700 */
-  --color-accent-soft: 219 234 254; /* #DBEAFE  blue-100 (washes) */
-
-  --color-reconciled: 241 245 249;  /* #F1F5F9  slate-100 */
-
-  /* Institution tile palette — 8 hand-picked hues, cool-leaning */
-  --badge-0: 37 99 235;    /* blue    */
-  --badge-1: 5 150 105;    /* emerald */
-  --badge-2: 14 165 233;   /* sky     */
-  --badge-3: 79 70 229;    /* indigo  */
-  --badge-4: 124 58 237;   /* violet  */
-  --badge-5: 219 39 119;   /* pink    */
-  --badge-6: 13 148 136;   /* teal    */
-  --badge-7: 202 138 4;    /* amber   */
-}
-
-[data-theme='dark'] {
-  --color-canvas: 11 18 32;         /* #0B1220 */
-  --color-surface: 17 24 39;        /* #111827 */
-  --color-border: 30 41 59;         /* #1E293B */
-  --color-border-strong: 51 65 85;  /* #334155 */
-  --color-text: 241 245 249;        /* #F1F5F9 */
-  --color-text-secondary: 148 163 184; /* #94A3B8 */
-  --color-text-tertiary: 100 116 139; /* #64748B */
-
-  --color-chrome: 2 8 23;           /* #020817 */
-  --color-chrome-text: 241 245 249;
-  --color-chrome-muted: 148 163 184;
-  --color-chrome-border: 30 41 59;
-
-  --color-credit: 52 211 153;       /* #34D399 emerald-400 */
-  --color-debit: 248 113 113;       /* #F87171 red-400 */
-
-  --color-accent: 96 165 250;       /* #60A5FA blue-400 */
-  --color-accent-hover: 59 130 246; /* #3B82F6 */
-  --color-accent-soft: 30 58 138;   /* #1E3A8A blue-900 */
-
+  /* Primary accent (CTA) = emerald — matches the ref image's active pill */
+  --color-accent: 16 185 129;            /* emerald-500 */
+  --color-accent-hover: 5 150 105;       /* emerald-600 */
+  --color-accent-soft: 6 78 59;          /* emerald-900 wash for active bg */
   --color-reconciled: 30 41 59;
 
-  /* Dark-mode badges: lift saturation and value */
-  --badge-0: 96 165 250;
-  --badge-1: 52 211 153;
-  --badge-2: 56 189 248;
-  --badge-3: 129 140 248;
-  --badge-4: 167 139 250;
-  --badge-5: 244 114 182;
-  --badge-6: 45 212 191;
-  --badge-7: 234 179 8;
-}
+  /* 8-color stat palette — used as rainbow numerics on dashboard cards */
+  --stat-1: 16 185 129;   /* emerald */
+  --stat-2: 59 130 246;   /* blue    */
+  --stat-3: 236 72 153;   /* rose    */
+  --stat-4: 245 158 11;   /* amber   */
+  --stat-5: 168 85 247;   /* violet  */
+  --stat-6: 20 184 166;   /* teal    */
+  --stat-7: 6 182 212;    /* cyan    */
+  --stat-8: 251 146 60;   /* orange  */
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
-    --color-canvas: 11 18 32;
-    --color-surface: 17 24 39;
-    --color-border: 30 41 59;
-    --color-border-strong: 51 65 85;
-    --color-text: 241 245 249;
-    --color-text-secondary: 148 163 184;
-    --color-text-tertiary: 100 116 139;
-    --color-chrome: 2 8 23;
-    --color-chrome-text: 241 245 249;
-    --color-chrome-muted: 148 163 184;
-    --color-chrome-border: 30 41 59;
-    --color-credit: 52 211 153;
-    --color-debit: 248 113 113;
-    --color-accent: 96 165 250;
-    --color-accent-hover: 59 130 246;
-    --color-accent-soft: 30 58 138;
-    --color-reconciled: 30 41 59;
-    --badge-0: 96 165 250;
-    --badge-1: 52 211 153;
-    --badge-2: 56 189 248;
-    --badge-3: 129 140 248;
-    --badge-4: 167 139 250;
-    --badge-5: 244 114 182;
-    --badge-6: 45 212 191;
-    --badge-7: 234 179 8;
-  }
+  /* Institution-tile palette (reuses stat hues — same category theming) */
+  --badge-0: var(--stat-1);
+  --badge-1: var(--stat-2);
+  --badge-2: var(--stat-3);
+  --badge-3: var(--stat-4);
+  --badge-4: var(--stat-5);
+  --badge-5: var(--stat-6);
+  --badge-6: var(--stat-7);
+  --badge-7: var(--stat-8);
 }
 
 html,
@@ -121,6 +64,7 @@ body {
   color: rgb(var(--color-text));
   font-feature-settings: 'ss01' on, 'cv11' on;
   -webkit-font-smoothing: antialiased;
+  color-scheme: dark;
 }
 
 /* Monetary amounts: tabular figures, lining numerals, slightly tighter */
@@ -131,59 +75,69 @@ body {
   text-align: right;
 }
 
-/* Display numerics — for hero balance totals */
+/* Display numerics — hero + stat cards */
 .amount-display {
   font-variant-numeric: tabular-nums lining-nums;
   font-feature-settings: 'tnum' on, 'lnum' on;
-  letter-spacing: -0.02em;
-  font-feature-settings: 'ss01' on, 'cv11' on;
-  font-weight: 600;
+  letter-spacing: -0.03em;
+  font-weight: 700;
 }
 
-/* Focus ring — used on all interactive elements */
+.stat-value {
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.035em;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Focus ring — accent with soft outer ring */
 :focus-visible {
   outline: 2px solid rgb(var(--color-accent));
   outline-offset: 2px;
-  border-radius: 2px;
+  border-radius: 3px;
 }
 
-/* Shared form-input surface */
+/* ------------ Form primitives ------------ */
+
 .input {
   display: block;
   width: 100%;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid rgb(var(--color-border-strong));
   background: rgb(var(--color-surface));
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   color: rgb(var(--color-text));
   transition: border-color 120ms cubic-bezier(0.2, 0, 0, 1),
-    box-shadow 120ms cubic-bezier(0.2, 0, 0, 1);
+    box-shadow 120ms cubic-bezier(0.2, 0, 0, 1),
+    background 120ms cubic-bezier(0.2, 0, 0, 1);
+}
+.input::placeholder {
+  color: rgb(var(--color-text-tertiary));
 }
 .input:focus {
   border-color: rgb(var(--color-accent));
-  box-shadow: 0 0 0 3px rgb(var(--color-accent) / 0.18);
+  box-shadow: 0 0 0 3px rgb(var(--color-accent) / 0.25);
   outline: none;
 }
 .input:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Primary button */
 .btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  border-radius: 6px;
+  border-radius: 8px;
   background: rgb(var(--color-accent));
-  padding: 0.5rem 0.875rem;
+  padding: 0.5rem 0.9rem;
   font-size: 0.8125rem;
-  font-weight: 500;
-  color: white;
-  transition: background 120ms cubic-bezier(0.2, 0, 0, 1),
-    transform 120ms cubic-bezier(0.2, 0, 0, 1);
+  font-weight: 600;
+  color: #04140A;
+  transition: all 120ms cubic-bezier(0.2, 0, 0, 1);
+  box-shadow: 0 1px 0 rgb(255 255 255 / 0.08) inset;
 }
 .btn-primary:hover:not(:disabled) {
   background: rgb(var(--color-accent-hover));
@@ -192,37 +146,35 @@ body {
   transform: translateY(1px);
 }
 .btn-primary:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-/* Ghost/secondary button */
 .btn-ghost {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.375rem;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid rgb(var(--color-border-strong));
   background: rgb(var(--color-surface));
   padding: 0.375rem 0.75rem;
   font-size: 0.8125rem;
   color: rgb(var(--color-text-secondary));
-  transition: color 120ms cubic-bezier(0.2, 0, 0, 1),
-    border-color 120ms cubic-bezier(0.2, 0, 0, 1),
-    background 120ms cubic-bezier(0.2, 0, 0, 1);
+  transition: all 120ms cubic-bezier(0.2, 0, 0, 1);
 }
 .btn-ghost:hover:not(:disabled) {
   color: rgb(var(--color-text));
-  border-color: rgb(var(--color-text-tertiary));
+  border-color: rgb(var(--color-border-strong));
+  background: rgb(var(--color-surface-elevated));
 }
 
-/* Custom checkbox — larger hit area, clearer state than native */
+/* Checkbox — outlined, fills accent when checked */
 .checkbox {
   appearance: none;
   -webkit-appearance: none;
-  width: 1rem;
-  height: 1rem;
+  width: 1.05rem;
+  height: 1.05rem;
   border: 1.5px solid rgb(var(--color-border-strong));
   border-radius: 4px;
   background: rgb(var(--color-surface));
@@ -245,8 +197,15 @@ body {
   left: 4px;
   top: 0;
   width: 5px;
-  height: 9px;
-  border: solid white;
+  height: 10px;
+  border: solid #04140A;
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
+}
+
+/* ------------ Card primitive ------------ */
+.card {
+  background: rgb(var(--color-surface));
+  border: 1px solid rgb(var(--color-border));
+  border-radius: 12px;
 }

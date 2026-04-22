@@ -1,5 +1,5 @@
 import { Cash } from '@/money';
-import type { AccountOpening, IsoDate, LedgerTransaction } from './accounts';
+import { balanceAsOf, type AccountOpening, type IsoDate, type LedgerTransaction } from './accounts';
 
 export interface BalancePoint {
   readonly date: IsoDate;
@@ -60,4 +60,37 @@ export function balanceTimeSeries(
   }
 
   return points;
+}
+
+export interface AccountLedger {
+  readonly account: AccountOpening;
+  readonly transactions: readonly LedgerTransaction[];
+}
+
+/**
+ * Per-date sum of per-account balances across every supplied account.
+ * Points are emitted on every date any account had an event (opening or
+ * txn) plus the throughDate if provided. Accounts whose opening_date is
+ * after a given point contribute zero at that point.
+ */
+export function combinedBalanceTimeSeries(
+  ledgers: readonly AccountLedger[],
+  throughDate?: IsoDate,
+): BalancePoint[] {
+  const allDates = new Set<IsoDate>();
+  for (const { account, transactions } of ledgers) {
+    allDates.add(account.openingDate);
+    for (const t of transactions) if (t.txnDate >= account.openingDate) allDates.add(t.txnDate);
+  }
+  if (throughDate) allDates.add(throughDate);
+  const dates = [...allDates].sort();
+
+  return dates.map((date) => {
+    let sum = Cash.zero();
+    for (const { account, transactions } of ledgers) {
+      if (date < account.openingDate) continue;
+      sum = sum.add(balanceAsOf(account, transactions, date));
+    }
+    return { date, balance: cashToNumber(sum) };
+  });
 }
