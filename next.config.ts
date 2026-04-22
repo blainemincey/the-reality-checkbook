@@ -7,6 +7,8 @@ const config: NextConfig = {
   // Dev-only: explicitly allow local origins so Next 15 stops warning and
   // we're ready for the future breaking change.
   allowedDevOrigins: ['127.0.0.1', 'localhost'],
+  // Hide the Next.js dev-mode route/build indicator in the lower-left corner.
+  devIndicators: false,
   typescript: {
     ignoreBuildErrors: false,
   },
