@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check } from 'lucide-react';
 import { Combobox } from '@/ui/components/combobox';
+import { CurrencyInput } from '@/ui/components/currency-input';
 import {
   createTransactionAction,
   type EntryInput,
@@ -238,9 +239,8 @@ export function EntryRow({ accounts, payees, defaultAccountId }: Props) {
           <span className="text-[10px] uppercase tracking-wider text-credit">
             Deposit
           </span>
-          <input
-            type="text"
-            inputMode="decimal"
+          <CurrencyInput
+            tone="credit"
             placeholder="0.00"
             value={state.depositAmount}
             onChange={(e) =>
@@ -251,7 +251,7 @@ export function EntryRow({ accounts, payees, defaultAccountId }: Props) {
               }))
             }
             disabled={paymentFocused}
-            className={`input amount ${depositFocused ? 'border-credit' : ''}`}
+            className={depositFocused ? 'border-credit' : ''}
           />
         </label>
 
@@ -259,9 +259,8 @@ export function EntryRow({ accounts, payees, defaultAccountId }: Props) {
           <span className="text-[10px] uppercase tracking-wider text-debit">
             Payment
           </span>
-          <input
-            type="text"
-            inputMode="decimal"
+          <CurrencyInput
+            tone="debit"
             placeholder="0.00"
             value={state.paymentAmount}
             onChange={(e) =>
@@ -272,7 +271,7 @@ export function EntryRow({ accounts, payees, defaultAccountId }: Props) {
               }))
             }
             disabled={depositFocused}
-            className={`input amount ${paymentFocused ? 'border-debit' : ''}`}
+            className={paymentFocused ? 'border-debit' : ''}
           />
         </label>
 

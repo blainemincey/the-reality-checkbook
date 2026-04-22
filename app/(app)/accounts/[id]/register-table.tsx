@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useOptimistic, useState, useTransition } from 'react';
 import { Check, ChevronLeft, ChevronRight, Pencil, Trash2, X } from 'lucide-react';
-import { Cash } from '@/money';
+import { Cash, formatCash } from '@/money';
 import { Amount } from '@/ui/components/amount';
 import {
   toggleClearedStateAction,
@@ -235,10 +235,10 @@ function Row({
         )}
       </td>
       <td className="amount px-3 py-2 text-debit">
-        {isPayment ? Cash.of(row.amount).abs().toFixed(2) : ''}
+        {isPayment ? formatCash(Cash.of(row.amount).abs()) : ''}
       </td>
       <td className="amount px-3 py-2 text-credit">
-        {!isPayment && !Cash.of(row.amount).isZero() ? Cash.of(row.amount).toFixed(2) : ''}
+        {!isPayment && !Cash.of(row.amount).isZero() ? formatCash(Cash.of(row.amount)) : ''}
       </td>
       <td className="px-3 py-2 text-right">
         <Amount value={Cash.of(row.runningBalance)} />

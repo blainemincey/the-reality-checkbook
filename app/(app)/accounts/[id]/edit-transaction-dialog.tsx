@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { X } from 'lucide-react';
 import { Combobox } from '@/ui/components/combobox';
+import { CurrencyInput } from '@/ui/components/currency-input';
 import { updateTransactionAction, type UpdateTxnInput } from './txn-actions';
 
 type ClearedState = 'uncleared' | 'cleared';
@@ -252,9 +253,8 @@ export function EditTransactionDialog({ txn, payees, accounts, onClose }: Props)
           </Field>
 
           <Field label="Payment">
-            <input
-              type="text"
-              inputMode="decimal"
+            <CurrencyInput
+              tone="debit"
               placeholder="0.00"
               value={state.paymentAmount}
               onChange={(e) =>
@@ -265,14 +265,12 @@ export function EditTransactionDialog({ txn, payees, accounts, onClose }: Props)
                 }))
               }
               disabled={depositFocused}
-              className="input amount"
             />
           </Field>
 
           <Field label="Deposit">
-            <input
-              type="text"
-              inputMode="decimal"
+            <CurrencyInput
+              tone="credit"
               placeholder="0.00"
               value={state.depositAmount}
               onChange={(e) =>
@@ -283,7 +281,6 @@ export function EditTransactionDialog({ txn, payees, accounts, onClose }: Props)
                 }))
               }
               disabled={paymentFocused}
-              className="input amount"
             />
           </Field>
 
