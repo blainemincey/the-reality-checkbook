@@ -16,6 +16,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "create-user": "tsx scripts/create-user.ts",
+    "import-xlsx": "tsx scripts/import-xlsx.ts",
     "test:e2e": "playwright test",
     "format": "prettier --write ."
   },
@@ -47,7 +48,8 @@
     "tailwindcss": "^3.4.16",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "xlsx": "^0.18.5"
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {

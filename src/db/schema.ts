@@ -42,8 +42,13 @@ export const userRoleEnum = pgEnum('user_role', ['admin', 'user']);
 export const transactionKindEnum = pgEnum('transaction_kind', [
   'deposit',
   'payment',
+  'bill_pay',
+  'check',
+  'atm',
   'interest',
+  'dividend',
   'transfer',
+  'tax_payment',
   'fee',
   'refund',
   'other',

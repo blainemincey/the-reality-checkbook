@@ -19,10 +19,15 @@ interface Props {
 type PayeeOption = ComboboxOption;
 
 const KIND_OPTIONS: Array<{ value: TxnKind; label: string }> = [
+  { value: 'bill_pay', label: 'Bill Pay' },
+  { value: 'check', label: 'Check' },
+  { value: 'atm', label: 'ATM' },
   { value: 'payment', label: 'Payment' },
   { value: 'deposit', label: 'Deposit' },
   { value: 'interest', label: 'Interest' },
+  { value: 'dividend', label: 'Dividend' },
   { value: 'transfer', label: 'Transfer' },
+  { value: 'tax_payment', label: 'Tax Payment' },
   { value: 'fee', label: 'Fee' },
   { value: 'refund', label: 'Refund' },
   { value: 'other', label: 'Other' },

@@ -11,8 +11,13 @@ import { Cash, parseCashInput } from '@/money';
 export type TxnKind =
   | 'deposit'
   | 'payment'
+  | 'bill_pay'
+  | 'check'
+  | 'atm'
   | 'interest'
+  | 'dividend'
   | 'transfer'
+  | 'tax_payment'
   | 'fee'
   | 'refund'
   | 'other';
