@@ -119,7 +119,7 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
           e.preventDefault();
           submit();
         }}
-        className="grid grid-cols-1 gap-3 px-4 py-3 md:grid-cols-[7rem_1fr_7rem_6.5rem_6.5rem_auto] md:items-start"
+        className="grid grid-cols-1 gap-3 px-4 py-3 md:grid-cols-[9rem_1fr_7rem_6.75rem_6.75rem_auto] md:items-start"
       >
         {/* Date */}
         <label className="flex flex-col gap-1">
@@ -158,10 +158,10 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
           />
         </div>
 
-        {/* Kind */}
+        {/* Type */}
         <label className="flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
-            Kind
+            Type
           </span>
           <select
             value={state.kind ?? ''}

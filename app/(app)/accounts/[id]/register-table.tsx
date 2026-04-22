@@ -1,7 +1,7 @@
 'use client';
 
-import { useOptimistic, useState, useTransition } from 'react';
-import { Check, Pencil, Trash2, X } from 'lucide-react';
+import { useEffect, useMemo, useOptimistic, useState, useTransition } from 'react';
+import { Check, ChevronLeft, ChevronRight, Pencil, Trash2, X } from 'lucide-react';
 import { Cash } from '@/money';
 import { Amount } from '@/ui/components/amount';
 import {
@@ -34,25 +34,78 @@ interface Props {
   openingDate: string;
 }
 
+const PAGE_SIZE_OPTIONS = [25, 50, 75] as const;
+type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
+const PAGE_SIZE_STORAGE_KEY = 'cr.register.pageSize';
+
 export function RegisterTable({ rows, payees, openingDate }: Props) {
-  // Reverse chronological: latest first.
   const [editing, setEditing] = useState<EditableTxn | null>(null);
+  const [pageSize, setPageSize] = useState<PageSize>(25);
+  const [page, setPage] = useState(1);
+
+  // Restore page-size preference.
+  useEffect(() => {
+    const stored = window.localStorage.getItem(PAGE_SIZE_STORAGE_KEY);
+    const n = stored ? Number(stored) : NaN;
+    if (PAGE_SIZE_OPTIONS.includes(n as PageSize)) setPageSize(n as PageSize);
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(PAGE_SIZE_STORAGE_KEY, String(pageSize));
+  }, [pageSize]);
+
+  // Reverse-chronological ordering, then page.
+  const reversed = useMemo(() => [...rows].reverse(), [rows]);
+  const totalRows = reversed.length;
+  const totalPages = Math.max(1, Math.ceil(totalRows / pageSize));
+  const currentPage = Math.min(page, totalPages);
+  const start = (currentPage - 1) * pageSize;
+  const pageRows = reversed.slice(start, start + pageSize);
+  const windowEnd = Math.min(start + pageSize, totalRows);
+
+  // Clamp on data changes.
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   return (
     <section className="card overflow-hidden">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold">Register</h2>
-        <span className="text-[11px] text-text-tertiary">
-          click the status dot to toggle cleared
-        </span>
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="flex items-baseline gap-3">
+          <h2 className="text-sm font-semibold">Register</h2>
+          <span className="text-[11px] text-text-tertiary">
+            click the status dot to toggle cleared
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-1.5 text-[11px] text-text-tertiary">
+            Show
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value) as PageSize);
+                setPage(1);
+              }}
+              className="input !py-1 !px-2 text-xs"
+            >
+              {PAGE_SIZE_OPTIONS.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+            per page
+          </label>
+        </div>
       </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-dense">
           <thead className="border-b border-border text-[11px] uppercase tracking-wider text-text-tertiary">
             <tr>
               <th className="w-10 px-3 py-2 text-center font-medium">✓</th>
-              <th className="w-24 px-3 py-2 text-left font-medium">Date</th>
-              <th className="w-28 px-3 py-2 text-left font-medium">Kind</th>
+              <th className="w-28 px-3 py-2 text-left font-medium">Date</th>
+              <th className="w-28 px-3 py-2 text-left font-medium">Type</th>
               <th className="px-3 py-2 text-left font-medium">Payee / Memo</th>
               <th className="w-28 px-3 py-2 text-right font-medium">Payment</th>
               <th className="w-28 px-3 py-2 text-right font-medium">Deposit</th>
@@ -61,11 +114,44 @@ export function RegisterTable({ rows, payees, openingDate }: Props) {
             </tr>
           </thead>
           <tbody>
-            {[...rows].reverse().map((r) => (
+            {pageRows.map((r) => (
               <Row key={r.id} row={r} onEdit={() => setEditing(toEditable(r))} />
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-2.5">
+        <span className="text-[11px] text-text-tertiary">
+          {totalRows === 0
+            ? 'no transactions'
+            : `Showing ${start + 1}–${windowEnd} of ${totalRows}`}
+        </span>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="btn-ghost !py-1 !px-2 disabled:opacity-30"
+              aria-label="Previous page"
+            >
+              <ChevronLeft size={12} strokeWidth={2} />
+            </button>
+            <span className="px-2 text-[11px] text-text-secondary">
+              Page {currentPage} of {totalPages}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+              className="btn-ghost !py-1 !px-2 disabled:opacity-30"
+              aria-label="Next page"
+            >
+              <ChevronRight size={12} strokeWidth={2} />
+            </button>
+          </div>
+        )}
       </div>
 
       {editing && (

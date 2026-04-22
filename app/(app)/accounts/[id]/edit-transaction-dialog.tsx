@@ -184,7 +184,7 @@ export function EditTransactionDialog({ txn, payees, openingDate, onClose }: Pro
             />
           </Field>
 
-          <Field label="Kind">
+          <Field label="Type">
             <select
               value={state.kind ?? ''}
               onChange={(e) =>
