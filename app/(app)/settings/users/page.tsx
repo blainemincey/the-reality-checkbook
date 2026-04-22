@@ -38,7 +38,10 @@ export default async function UsersSettingsPage() {
               user={{
                 id: u.id,
                 username: u.username,
+                name: u.name,
                 role: u.role,
+                loginCount: u.loginCount,
+                lastLoginAt: u.lastLoginAt ? u.lastLoginAt.toISOString() : null,
                 createdAt: u.createdAt.toISOString(),
               }}
               isSelf={u.id === currentUser.id}

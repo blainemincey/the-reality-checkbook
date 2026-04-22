@@ -16,7 +16,7 @@ export function NewUserForm() {
 
   return (
     <form ref={formRef} action={action} className="space-y-3">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_8rem]">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_1fr_8rem]">
         <label className="flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
             Username
@@ -29,6 +29,18 @@ export function NewUserForm() {
             autoCorrect="off"
             spellCheck={false}
             placeholder="e.g. taylor"
+            disabled={pending}
+            className="input"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
+            Name (optional)
+          </span>
+          <input
+            name="name"
+            type="text"
+            placeholder="e.g. Taylor Mincey"
             disabled={pending}
             className="input"
           />

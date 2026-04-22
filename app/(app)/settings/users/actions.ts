@@ -6,7 +6,12 @@ import { db } from '@/db/client';
 import { users } from '@/db/schema';
 import { hashPassword, PasswordError } from '@/lib/auth/password';
 import { requireAdmin } from '@/lib/auth/guards';
-import { isValidUsername, normalizeUsername } from '@/lib/username';
+import {
+  isValidName,
+  isValidUsername,
+  normalizeName,
+  normalizeUsername,
+} from '@/lib/username';
 
 export interface UserActionState {
   error?: string;
@@ -22,6 +27,7 @@ export async function createUserAction(
   await requireAdmin();
 
   const username = normalizeUsername(String(formData.get('username') ?? ''));
+  const name = normalizeName(String(formData.get('name') ?? ''));
   const password = String(formData.get('password') ?? '');
   const roleRaw = String(formData.get('role') ?? 'user');
   const role: Role = roleRaw === 'admin' ? 'admin' : 'user';
@@ -31,6 +37,9 @@ export async function createUserAction(
       error:
         'Username must be 3–32 chars: lowercase letters, digits, . _ -; start/end with letter or digit.',
     };
+  }
+  if (!isValidName(name)) {
+    return { error: 'Name is too long (max 64 chars).' };
   }
 
   let passwordHash: string;
@@ -42,7 +51,9 @@ export async function createUserAction(
   }
 
   try {
-    await db.insert(users).values({ username, passwordHash, role });
+    await db
+      .insert(users)
+      .values({ username, name: name || null, passwordHash, role });
   } catch (e) {
     if ((e as { code?: string }).code === '23505') {
       return { error: `Username "${username}" already exists.` };
@@ -52,6 +63,46 @@ export async function createUserAction(
 
   revalidatePath('/settings/users');
   return { success: `Added ${username}` };
+}
+
+export async function updateUserIdentityAction(
+  targetId: string,
+  patch: { username?: string; name?: string },
+): Promise<UserActionState> {
+  await requireAdmin();
+
+  const updates: { username?: string; name?: string | null } = {};
+
+  if (patch.username !== undefined) {
+    const username = normalizeUsername(patch.username);
+    if (!isValidUsername(username)) {
+      return {
+        error:
+          'Username must be 3–32 chars: lowercase letters, digits, . _ -; start/end with letter or digit.',
+      };
+    }
+    updates.username = username;
+  }
+  if (patch.name !== undefined) {
+    const name = normalizeName(patch.name);
+    if (!isValidName(name)) return { error: 'Name is too long (max 64 chars).' };
+    updates.name = name || null;
+  }
+
+  if (Object.keys(updates).length === 0) return { success: 'No changes' };
+
+  try {
+    await db.update(users).set(updates).where(eq(users.id, targetId));
+  } catch (e) {
+    if ((e as { code?: string }).code === '23505') {
+      return { error: `Username "${updates.username}" already exists.` };
+    }
+    throw e;
+  }
+
+  revalidatePath('/settings/users');
+  revalidatePath('/');
+  return { success: 'Saved' };
 }
 
 export async function updateUserRoleAction(

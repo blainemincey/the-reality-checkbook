@@ -7,11 +7,12 @@ import { logoutAction } from '../login/actions';
 
 interface Props {
   username: string;
+  name: string | null;
   role: 'admin' | 'user';
   initials: string;
 }
 
-export function UserMenu({ username, role, initials }: Props) {
+export function UserMenu({ username, name, role, initials }: Props) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -30,7 +31,7 @@ export function UserMenu({ username, role, initials }: Props) {
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        title={username}
+        title={name ? `${name} (@${username})` : `@${username}`}
         className={
           'inline-flex h-9 w-9 items-center justify-center rounded-full bg-accent text-[11px] font-semibold text-[#04140A] ring-2 ring-transparent transition-all duration-120 ease-swift hover:ring-accent/40 ' +
           (open ? 'ring-accent/50' : '')
@@ -45,8 +46,15 @@ export function UserMenu({ username, role, initials }: Props) {
           className="absolute right-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-lg border border-border bg-surface shadow-card"
         >
           <div className="border-b border-border px-3 py-2.5">
-            <div className="truncate text-xs font-medium text-text">@{username}</div>
-            <div className="mt-0.5 text-[10px] uppercase tracking-wider text-text-tertiary">
+            {name ? (
+              <>
+                <div className="truncate text-sm font-medium text-text">{name}</div>
+                <div className="truncate text-[11px] text-text-tertiary">@{username}</div>
+              </>
+            ) : (
+              <div className="truncate text-xs font-medium text-text">@{username}</div>
+            )}
+            <div className="mt-1 text-[10px] uppercase tracking-wider text-text-tertiary">
               {role}
             </div>
           </div>

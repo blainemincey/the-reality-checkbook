@@ -57,6 +57,13 @@
       "when": 1776884852352,
       "tag": "0007_users_username",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1776886066657,
+      "tag": "0008_add_name_login_tracking",
+      "breakpoints": true
     }
   ]
 }

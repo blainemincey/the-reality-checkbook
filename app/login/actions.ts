@@ -1,6 +1,6 @@
 'use server';
 
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { redirect } from 'next/navigation';
 import { db } from '@/db/client';
 import { users } from '@/db/schema';
@@ -35,6 +35,14 @@ export async function loginAction(
   if (!user || !ok) {
     return { error: 'Invalid username or password.' };
   }
+
+  await db
+    .update(users)
+    .set({
+      loginCount: sql`${users.loginCount} + 1`,
+      lastLoginAt: new Date(),
+    })
+    .where(eq(users.id, user.id));
 
   const { token, expiresAt } = await createSession(user.id);
   await setSessionCookie(token, expiresAt);

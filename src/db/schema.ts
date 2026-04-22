@@ -70,6 +70,9 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   role: userRoleEnum('role').notNull().default('user'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  name: text('name'),
+  loginCount: integer('login_count').notNull().default(0),
+  lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
 });
 
 export const sessions = pgTable('sessions', {
