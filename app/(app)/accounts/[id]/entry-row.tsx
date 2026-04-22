@@ -1,22 +1,31 @@
 'use client';
 
-import { useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check } from 'lucide-react';
-import { Combobox, type ComboboxOption } from '@/ui/components/combobox';
+import { Combobox } from '@/ui/components/combobox';
 import {
   createTransactionAction,
   type EntryInput,
   type TxnKind,
 } from './entry-action';
 
-interface Props {
-  accountId: string;
-  openingDate: string; // YYYY-MM-DD
-  payees: readonly { id: string; name: string }[];
+interface EntryAccount {
+  readonly id: string;
+  readonly name: string;
+  readonly openingDate: string;
 }
 
-type PayeeOption = ComboboxOption;
+interface Props {
+  /**
+   * One entry: hides the Account select (single-account mode).
+   * Two or more: shows an Account select as the first field.
+   */
+  accounts: readonly EntryAccount[];
+  payees: readonly { id: string; name: string }[];
+  /** Initial account id (multi-mode only). Defaults to the first. */
+  defaultAccountId?: string;
+}
 
 const KIND_OPTIONS: Array<{ value: TxnKind; label: string }> = [
   { value: 'bill_pay', label: 'Bill Pay' },
@@ -38,7 +47,11 @@ function isoToday(): string {
   return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
 }
 
-const emptyEntry = (openingDate: string): EntryInput & { [k: string]: unknown } => ({
+function maxDate(a: string, b: string): string {
+  return a >= b ? a : b;
+}
+
+const emptyEntry = (openingDate: string): EntryInput => ({
   txnDate: maxDate(isoToday(), openingDate),
   payeeName: '',
   payeeId: null,
@@ -50,47 +63,66 @@ const emptyEntry = (openingDate: string): EntryInput & { [k: string]: unknown } 
   cleared: false,
 });
 
-function maxDate(a: string, b: string): string {
-  return a >= b ? a : b;
-}
-
-export function EntryRow({ accountId, openingDate, payees }: Props) {
+export function EntryRow({ accounts, payees, defaultAccountId }: Props) {
   const router = useRouter();
-  const [state, setState] = useState<EntryInput>(() => emptyEntry(openingDate));
+  const isMulti = accounts.length > 1;
+
+  const initialAccountId =
+    (defaultAccountId && accounts.find((a) => a.id === defaultAccountId)?.id) ??
+    accounts[0]!.id;
+  const [accountId, setAccountId] = useState<string>(initialAccountId);
+
+  const currentAccount = useMemo(
+    () => accounts.find((a) => a.id === accountId) ?? accounts[0]!,
+    [accounts, accountId],
+  );
+
+  const [state, setState] = useState<EntryInput>(() =>
+    emptyEntry(currentAccount.openingDate),
+  );
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [saving, startSave] = useTransition();
 
-  const firstFieldRef = useRef<HTMLInputElement>(null);
   const payeeInputRef = useRef<HTMLInputElement>(null);
 
-  const options: PayeeOption[] = payees.map((p) => ({ id: p.id, label: p.name }));
+  // When switching accounts, bump the date forward if it predates the new
+  // opening_date so the input's min doesn't block submit.
+  useEffect(() => {
+    setState((s) =>
+      s.txnDate < currentAccount.openingDate
+        ? { ...s, txnDate: currentAccount.openingDate }
+        : s,
+    );
+  }, [currentAccount.openingDate]);
+
+  const options = payees.map((p) => ({ id: p.id, label: p.name }));
 
   const submit = () => {
     setError(null);
     setSuccess(null);
 
-    // Auto-pick kind if the user didn't override it.
     const kind: TxnKind | null =
       state.kind ??
-      (state.depositAmount.trim() ? 'deposit' : state.paymentAmount.trim() ? 'payment' : null);
+      (state.depositAmount.trim()
+        ? 'deposit'
+        : state.paymentAmount.trim()
+          ? 'payment'
+          : null);
 
+    const target = currentAccount;
     startSave(async () => {
-      const result = await createTransactionAction(accountId, {
-        ...state,
-        kind,
-      });
+      const result = await createTransactionAction(target.id, { ...state, kind });
       if (!result.ok) {
         setError(result.error ?? 'Save failed');
         return;
       }
       setSuccess(
         result.inserted
-          ? `Added ${result.inserted.payeeName || 'transaction'} — ${result.inserted.amount}`
+          ? `Added to ${target.name}: ${result.inserted.payeeName || 'transaction'} — ${result.inserted.amount}`
           : 'Added',
       );
-      setState(emptyEntry(openingDate));
-      // Return focus to the payee field for rapid chained entry.
+      setState(emptyEntry(target.openingDate));
       setTimeout(() => payeeInputRef.current?.focus(), 0);
       router.refresh();
     });
@@ -106,6 +138,11 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
   const depositFocused = state.depositAmount.length > 0;
   const paymentFocused = state.paymentAmount.length > 0;
 
+  // Grid template expands when the Account select is present.
+  const gridCols = isMulti
+    ? 'md:grid-cols-[10rem_9rem_1fr_7rem_6.75rem_6.75rem_auto]'
+    : 'md:grid-cols-[9rem_1fr_7rem_6.75rem_6.75rem_auto]';
+
   return (
     <section className="card" onKeyDown={onKeyDown}>
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
@@ -119,25 +156,41 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
           e.preventDefault();
           submit();
         }}
-        className="grid grid-cols-1 gap-3 px-4 py-3 md:grid-cols-[9rem_1fr_7rem_6.75rem_6.75rem_auto] md:items-start"
+        className={`grid grid-cols-1 gap-3 px-4 py-3 md:items-start ${gridCols}`}
       >
-        {/* Date */}
+        {isMulti && (
+          <label className="flex flex-col gap-1">
+            <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
+              Account
+            </span>
+            <select
+              value={accountId}
+              onChange={(e) => setAccountId(e.target.value)}
+              className="input"
+            >
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
         <label className="flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
             Date
           </span>
           <input
-            ref={firstFieldRef}
             type="date"
             required
-            min={openingDate}
+            min={currentAccount.openingDate}
             value={state.txnDate}
             onChange={(e) => setState((s) => ({ ...s, txnDate: e.target.value }))}
             className="input"
           />
         </label>
 
-        {/* Payee (combobox + memo below) */}
         <div className="flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
             Payee
@@ -158,7 +211,6 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
           />
         </div>
 
-        {/* Type */}
         <label className="flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
             Type
@@ -182,7 +234,6 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
           </select>
         </label>
 
-        {/* Deposit */}
         <label className="flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-wider text-credit">
             Deposit
@@ -204,7 +255,6 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
           />
         </label>
 
-        {/* Payment */}
         <label className="flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-wider text-debit">
             Payment
@@ -226,7 +276,6 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
           />
         </label>
 
-        {/* Submit */}
         <div className="flex flex-col gap-1">
           <span className="text-[10px] uppercase tracking-wider text-transparent md:block">
             &nbsp;
@@ -237,7 +286,6 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
           </button>
         </div>
 
-        {/* Secondary row: memo, check #, cleared */}
         <div className="col-span-full grid grid-cols-1 items-end gap-3 md:grid-cols-[1fr_7rem_auto]">
           <label className="flex flex-col gap-1">
             <span className="text-[10px] uppercase tracking-wider text-text-tertiary">
@@ -275,7 +323,6 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
           </label>
         </div>
 
-        {/* Feedback */}
         {(error || success) && (
           <div className="col-span-full">
             {error && <p className="text-xs text-debit">{error}</p>}

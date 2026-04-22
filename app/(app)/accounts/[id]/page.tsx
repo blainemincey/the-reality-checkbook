@@ -165,8 +165,9 @@ export default async function AccountPage({
       {/* Entry row */}
       <section className="mb-6">
         <EntryRow
-          accountId={account.id}
-          openingDate={account.openingDate}
+          accounts={[
+            { id: account.id, name: account.name, openingDate: account.openingDate },
+          ]}
           payees={payees.map((p) => ({ id: p.id, name: p.name }))}
         />
       </section>

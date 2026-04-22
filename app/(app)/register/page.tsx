@@ -7,6 +7,8 @@ import { Cash, formatCash } from '@/money';
 import { unifiedLedger } from '@/domain/unified-ledger';
 import { StatCard } from '@/ui/components/stat-card';
 import { resolveLogoFilename } from '@/ui/components/institution-logos';
+import { listPayees } from '@/server/payees';
+import { EntryRow } from '../accounts/[id]/entry-row';
 import {
   UnifiedRegisterTable,
   type UnifiedRegisterRow,
@@ -19,6 +21,8 @@ export default async function RegisterPage() {
     .select()
     .from(accounts)
     .where(and(eq(accounts.userId, user.id), eq(accounts.isArchived, false)));
+
+  const payees = await listPayees(user.id);
 
   const txnRows = await db
     .select()
@@ -105,14 +109,33 @@ export default async function RegisterPage() {
         />
       </section>
 
+      {acctRows.length > 0 && (
+        <section className="mb-6">
+          <EntryRow
+            accounts={acctRows.map((a) => ({
+              id: a.id,
+              name: a.name,
+              openingDate: a.openingDate,
+            }))}
+            payees={payees.map((p) => ({ id: p.id, name: p.name }))}
+          />
+        </section>
+      )}
+
       {rows.length === 0 ? (
         <div className="card flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
           <p className="text-sm text-text-secondary">
-            No transactions yet. Add one from an{' '}
-            <Link href="/" className="text-accent no-underline">
-              account
-            </Link>
-            .
+            No transactions yet.
+            {acctRows.length === 0 && (
+              <>
+                {' '}
+                Create an{' '}
+                <Link href="/accounts/new" className="text-accent no-underline">
+                  account
+                </Link>{' '}
+                first.
+              </>
+            )}
           </p>
         </div>
       ) : (
