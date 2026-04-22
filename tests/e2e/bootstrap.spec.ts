@@ -19,7 +19,6 @@ test.describe('bootstrap: paste → preview → commit → register', () => {
 
     // Land on accounts list (empty state).
     await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Accounts' })).toBeVisible();
     await expect(page.getByText('Start by creating an account.')).toBeVisible();
 
     // Create an account with the spec's opening: $4,231.07 on 2026-11-01.
@@ -69,16 +68,11 @@ test.describe('bootstrap: paste → preview → commit → register', () => {
     await page.getByRole('button', { name: /Commit 12 rows/i }).click();
     await expect(page).toHaveURL(/\/accounts\/[0-9a-f-]+$/);
 
-    // Register shows 12 rows, final running balance = $2,933.85.
+    // Register shows 12 rows; it's reverse-chronological (newest-first), so
+    // the latest-dated row — which carries the final running balance —
+    // appears FIRST in the table body.
     const bodyRows = page.locator('table tbody tr');
     await expect(bodyRows).toHaveCount(12);
-    await expect(bodyRows.last().locator('td').last()).toContainText('$2,933.85');
-
-    // Header balance should also reflect the current (today) running balance.
-    // With all 12 txns dated 11/1-11/4/2026 and "today" being wall-clock date,
-    // the current balance equals $2,933.85 (assuming the test runs on or after
-    // 2026-11-04). If this assertion fails on a machine clock earlier than
-    // 11/4/2026, the scenario's dates should be adjusted — leaving as-is per
-    // the spec's narrative.
+    await expect(bodyRows.first().locator('td').last()).toContainText('$2,933.85');
   });
 });

@@ -26,7 +26,7 @@ function makeClient() {
 export async function resetDatabase(): Promise<void> {
   const sql = makeClient();
   try {
-    await sql`TRUNCATE transfers, reconciliations, transactions, categories, sessions, accounts, users RESTART IDENTITY CASCADE`;
+    await sql`TRUNCATE transfers, reconciliations, transactions, payees, categories, sessions, accounts, users RESTART IDENTITY CASCADE`;
   } finally {
     await sql.end();
   }

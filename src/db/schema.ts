@@ -12,6 +12,7 @@ import {
   index,
   unique,
   primaryKey,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
@@ -37,6 +38,16 @@ export const clearedStateEnum = pgEnum('cleared_state', [
 export const categoryKindEnum = pgEnum('category_kind', ['expense', 'income', 'transfer']);
 
 export const userRoleEnum = pgEnum('user_role', ['admin', 'user']);
+
+export const transactionKindEnum = pgEnum('transaction_kind', [
+  'deposit',
+  'payment',
+  'interest',
+  'transfer',
+  'fee',
+  'refund',
+  'other',
+]);
 
 // ---------------------------------------------------------------------------
 // Currencies — tiny reference table so accounts.currency is a real FK
@@ -160,6 +171,11 @@ export const transactions = pgTable(
     amount: numeric('amount', { precision: 19, scale: 4 }).notNull(),
 
     categoryId: uuid('category_id').references(() => categories.id, { onDelete: 'set null' }),
+    // Forward-referenced — payees table is declared below.
+    payeeId: uuid('payee_id').references((): AnyPgColumn => payees.id, {
+      onDelete: 'set null',
+    }),
+    kind: transactionKindEnum('kind'),
     clearedState: clearedStateEnum('cleared_state').notNull().default('uncleared'),
     reconciliationId: uuid('reconciliation_id').references(() => reconciliations.id, {
       onDelete: 'set null',
@@ -229,6 +245,7 @@ export const transactionsRelations = relations(transactions, ({ one }) => ({
     fields: [transactions.reconciliationId],
     references: [reconciliations.id],
   }),
+  payee: one(payees, { fields: [transactions.payeeId], references: [payees.id] }),
 }));
 
 export const categoriesRelations = relations(categories, ({ one, many }) => ({
