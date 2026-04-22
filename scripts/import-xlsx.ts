@@ -146,10 +146,16 @@ async function main(): Promise<void> {
     exit(2);
   }
 
-  // Harvest opening balances from the top rows. They look like:
-  //   ["Schwab Balance","$4,780.10","Fidelity Balance","$44,030.36", ...]
-  // Pair label-cell with value-cell whenever the label matches /<name> Balance/i.
+  // Harvest opening balances from the top rows. The sheet has two families
+  // of balance-shaped cells up there:
+  //   Row 2 ("Starting Balances"):   Schwab Balance / Fidelity Balance  — real
+  //   Row 4 ("Running"):             Schwab Running / Fidelity Running  — STALE
+  //                                  Running Balance / CC Balance       — STALE
+  // Only the "Starting Balances" row gets used. Stale totals are enumerated
+  // in STALE_LABELS and logged so it's obvious what's being ignored.
+  const STALE_LABELS = /^(running|cc|combined|total|starting|deposit|payment|pending)$/i;
   const openings = new Map<string, Cash>();
+  const ignoredLabels: string[] = [];
   for (let r = 0; r < headerIdx; r++) {
     const row = rows[r]!;
     for (let c = 0; c < row.length - 1; c++) {
@@ -157,24 +163,28 @@ async function main(): Promise<void> {
       const match = /^([A-Za-z].+?)\s+Balance$/i.exec(label);
       if (!match) continue;
       const bankName = match[1]!.trim();
-      // Skip meta-labels that aren't actual accounts.
-      if (/^(running|cc|combined|total|starting)$/i.test(bankName)) continue;
+      if (STALE_LABELS.test(bankName)) {
+        ignoredLabels.push(label);
+        continue;
+      }
       const amt = parseCashInput(String(row[c + 1] ?? ''));
       if (amt.ok && amt.value) {
-        // Translate to full account name
         const instName =
           bankName.toLowerCase() === 'schwab'
             ? 'Schwab Checking'
             : bankName.toLowerCase() === 'fidelity'
               ? 'Fidelity CMA'
-              : bankName; // other names kept verbatim
+              : bankName;
         if (!openings.has(instName)) openings.set(instName, amt.value);
       }
     }
   }
 
-  console.log('Detected opening balances:');
+  console.log('Opening balances (from "Starting Balances" row):');
   for (const [n, b] of openings) console.log(`  ${n}  ${b.toString()}`);
+  if (ignoredLabels.length > 0) {
+    console.log(`Ignored stale totals: ${[...new Set(ignoredLabels)].join(', ')}`);
+  }
 
   // Discover institutions actually used in data rows.
   const dataRows = rows.slice(headerIdx + 1).filter((r) => {
