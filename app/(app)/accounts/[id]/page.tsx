@@ -9,6 +9,7 @@ import { Cash } from '@/money';
 import { registerRows } from '@/domain/accounts';
 import { Amount } from '@/ui/components/amount';
 import { InstitutionBadge } from '@/ui/components/institution-badge';
+import { AccountTypeIcon, accountTypeLabel } from '@/ui/components/account-type-icon';
 import { formatCash } from '@/money';
 
 export default async function AccountPage({ params }: { params: Promise<{ id: string }> }) {
@@ -49,11 +50,12 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
             <InstitutionBadge institution={account.institution} fallback={account.name} size="lg" />
             <div className="min-w-0">
               <h1 className="truncate text-lg font-medium">{account.name}</h1>
-              <p className="mt-0.5 text-xs text-text-tertiary">
-                {account.institution ? `${account.institution} · ` : ''}
-                {account.accountType.replace('_', ' ')}
-                {account.last4 ? ` ····${account.last4}` : ''} · opened{' '}
-                {account.openingDate} at {formatCash(Cash.of(account.openingBalance))}
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs text-text-tertiary">
+                <AccountTypeIcon type={account.accountType} />
+                <span>{accountTypeLabel(account.accountType)}</span>
+                {account.institution && <span>· {account.institution}</span>}
+                {account.last4 && <span>····{account.last4}</span>}
+                <span>· opened {account.openingDate} at {formatCash(Cash.of(account.openingBalance))}</span>
               </p>
             </div>
           </div>

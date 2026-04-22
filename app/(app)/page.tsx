@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth/guards';
 import { listAccountsForUser } from '@/server/accounts';
 import { Amount } from '@/ui/components/amount';
 import { InstitutionBadge } from '@/ui/components/institution-badge';
+import { AccountTypeIcon, accountTypeLabel } from '@/ui/components/account-type-icon';
 
 export default async function AccountsListPage() {
   const { user } = await requireAuth();
@@ -34,10 +35,11 @@ export default async function AccountsListPage() {
                   <InstitutionBadge institution={a.institution} fallback={a.name} size="md" />
                   <div className="min-w-0">
                     <div className="truncate text-sm font-medium">{a.name}</div>
-                    <div className="mt-0.5 text-xs text-text-tertiary">
-                      {a.institution ? `${a.institution} · ` : ''}
-                      {a.accountType.replace('_', ' ')}
-                      {a.last4 ? ` ····${a.last4}` : ''}
+                    <div className="mt-0.5 flex items-center gap-1.5 text-xs text-text-tertiary">
+                      <AccountTypeIcon type={a.accountType} />
+                      <span>{accountTypeLabel(a.accountType)}</span>
+                      {a.institution && <span>· {a.institution}</span>}
+                      {a.last4 && <span>····{a.last4}</span>}
                     </div>
                   </div>
                 </div>
