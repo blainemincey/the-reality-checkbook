@@ -1,0 +1,26 @@
+node_modules/
+.next/
+dist/
+out/
+coverage/
+.DS_Store
+tsconfig.tsbuildinfo
+next-env.d.ts
+
+.env
+.env.local
+.env.*.local
+!.env.example
+
+*.log
+.turbo/
+.vercel/
+
+# Docker volumes
+/data/
+/backups/
+
+# IDE
+.vscode/
+.idea/
+*.swp
