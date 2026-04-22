@@ -6,6 +6,7 @@ import { Cash, formatCash } from '@/money';
 import { Amount } from '@/ui/components/amount';
 import { InstitutionBadge } from '@/ui/components/institution-badge';
 import { AccountTypeIcon, accountTypeLabel } from '@/ui/components/account-type-icon';
+import { BalanceSparkline } from '@/ui/components/charts/balance-sparkline';
 
 export default async function AccountsListPage() {
   const { user } = await requireAuth();
@@ -101,28 +102,37 @@ function AccountList({ accounts }: { accounts: AccountWithBalance[] }) {
     <section>
       <h2 className="mb-2 text-xs uppercase tracking-wider text-text-tertiary">Accounts</h2>
       <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
-        {accounts.map((a) => (
-          <li key={a.id}>
-            <Link
-              href={`/accounts/${a.id}`}
-              className="flex items-center justify-between gap-4 px-4 py-3 transition-colors duration-120 ease-swift hover:bg-canvas"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                <InstitutionBadge institution={a.institution} fallback={a.name} size="md" />
-                <div className="min-w-0">
-                  <div className="truncate text-sm font-medium">{a.name}</div>
-                  <div className="mt-0.5 flex items-center gap-1.5 text-xs text-text-tertiary">
-                    <AccountTypeIcon type={a.accountType} />
-                    <span>{accountTypeLabel(a.accountType)}</span>
-                    {a.institution && <span>· {a.institution}</span>}
-                    {a.last4 && <span>····{a.last4}</span>}
+        {accounts.map((a) => {
+          const first = a.series[0]?.balance ?? 0;
+          const last = a.series[a.series.length - 1]?.balance ?? first;
+          const trend: 'up' | 'down' | 'flat' =
+            last > first ? 'up' : last < first ? 'down' : 'flat';
+          return (
+            <li key={a.id}>
+              <Link
+                href={`/accounts/${a.id}`}
+                className="flex items-center justify-between gap-4 px-4 py-3 transition-colors duration-120 ease-swift hover:bg-canvas"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <InstitutionBadge institution={a.institution} fallback={a.name} size="md" />
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{a.name}</div>
+                    <div className="mt-0.5 flex items-center gap-1.5 text-xs text-text-tertiary">
+                      <AccountTypeIcon type={a.accountType} />
+                      <span>{accountTypeLabel(a.accountType)}</span>
+                      {a.institution && <span>· {a.institution}</span>}
+                      {a.last4 && <span>····{a.last4}</span>}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <Amount value={a.currentBalance} className="text-base font-medium" />
-            </Link>
-          </li>
-        ))}
+                <div className="flex items-center gap-4">
+                  <BalanceSparkline data={a.series} trend={trend} />
+                  <Amount value={a.currentBalance} className="text-base font-medium" />
+                </div>
+              </Link>
+            </li>
+          );
+        })}
       </ul>
     </section>
   );

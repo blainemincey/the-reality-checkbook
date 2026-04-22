@@ -3,8 +3,12 @@ import { db } from '@/db/client';
 import { accounts, transactions, type AccountRow } from '@/db/schema';
 import { Cash } from '@/money';
 import { balanceAsOf } from '@/domain/accounts';
+import { balanceTimeSeries, type BalancePoint } from '@/domain/charts';
 
-export type AccountWithBalance = AccountRow & { currentBalance: Cash };
+export type AccountWithBalance = AccountRow & {
+  currentBalance: Cash;
+  series: readonly BalancePoint[];
+};
 
 export async function listAccountsForUser(userId: string): Promise<AccountWithBalance[]> {
   const rows = await db
@@ -21,18 +25,20 @@ export async function listAccountsForUser(userId: string): Promise<AccountWithBa
       .from(transactions)
       .where(and(eq(transactions.accountId, row.id), eq(transactions.isDeleted, false)));
 
-    const balance = balanceAsOf(
-      { openingBalance: Cash.of(row.openingBalance), openingDate: row.openingDate },
-      txns.map((t) => ({
-        id: t.id,
-        txnDate: t.txnDate,
-        amount: Cash.of(t.amount),
-        clearedState: t.clearedState,
-      })),
-      today,
-    );
+    const ledger = txns.map((t) => ({
+      id: t.id,
+      txnDate: t.txnDate,
+      amount: Cash.of(t.amount),
+      clearedState: t.clearedState,
+    }));
+    const opening = {
+      openingBalance: Cash.of(row.openingBalance),
+      openingDate: row.openingDate,
+    };
+    const balance = balanceAsOf(opening, ledger, today);
+    const series = balanceTimeSeries(opening, ledger, today);
 
-    withBalance.push({ ...row, currentBalance: balance });
+    withBalance.push({ ...row, currentBalance: balance, series });
   }
   return withBalance;
 }

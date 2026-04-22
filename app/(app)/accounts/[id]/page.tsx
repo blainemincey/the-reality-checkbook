@@ -8,6 +8,9 @@ import { transactions } from '@/db/schema';
 import { and, eq } from 'drizzle-orm';
 import { Cash } from '@/money';
 import { registerRows } from '@/domain/accounts';
+import { balanceTimeSeries } from '@/domain/charts';
+import { BalanceChart } from '@/ui/components/charts/balance-chart';
+import { isoToday } from '@/server/accounts';
 import { Amount } from '@/ui/components/amount';
 import { InstitutionBadge } from '@/ui/components/institution-badge';
 import { AccountTypeIcon, accountTypeLabel } from '@/ui/components/account-type-icon';
@@ -106,6 +109,21 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
             Settings
           </Link>
         </div>
+      </div>
+
+      <div className="mb-6">
+        <BalanceChart
+          data={balanceTimeSeries(
+            { openingBalance: Cash.of(account.openingBalance), openingDate: account.openingDate },
+            txRows.map((r) => ({
+              id: r.id,
+              txnDate: r.txnDate,
+              amount: Cash.of(r.amount),
+              clearedState: r.clearedState,
+            })),
+            isoToday(),
+          )}
+        />
       </div>
 
       <div className="mb-6">
