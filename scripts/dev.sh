@@ -264,8 +264,28 @@ cmd_test() {
   fi
   ensure_test_db
 
+  # Playwright's webServer runs `npm run build` which clobbers .next. If the
+  # dev server is running against the same .next, it hits ENOENT on
+  # _buildManifest mid-request. Stop dev before the gate, restart after.
+  local dev_was_running=0
+  if dev_pid >/dev/null; then
+    dev_was_running=1
+    msg "pausing dev server for the test run…"
+    cmd_stop
+    rm -rf "$REPO_ROOT/.next"
+  fi
+
+  local rc=0
   TEST_DATABASE_URL="postgres://$(whoami)@127.0.0.1:5432/$TEST_DB" \
-    npm run test:e2e -- "$@"
+    npm run test:e2e -- "$@" || rc=$?
+
+  if (( dev_was_running )); then
+    rm -rf "$REPO_ROOT/.next"
+    msg "restarting dev server…"
+    cmd_start
+  fi
+
+  return $rc
 }
 
 cmd_migrate() {
