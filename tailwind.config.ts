@@ -21,7 +21,7 @@ const config: Config = {
         reconciled: 'rgb(var(--color-reconciled) / <alpha-value>)',
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        sans: ['var(--font-inter)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         base: ['0.875rem', { lineHeight: '1.35rem' }], // 14px
