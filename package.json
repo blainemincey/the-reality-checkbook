@@ -16,10 +16,12 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "create-user": "tsx scripts/create-user.ts",
+    "test:e2e": "playwright test",
     "format": "prettier --write ."
   },
   "dependencies": {
     "@node-rs/argon2": "^2.0.2",
+    "dotenv": "^16.4.7",
     "decimal.js": "^10.4.3",
     "drizzle-orm": "^0.45.2",
     "next": "15.5.15",
@@ -31,6 +33,7 @@
     "@types/node": "^22.10.1",
     "@types/react": "^19.0.1",
     "@types/react-dom": "^19.0.2",
+    "@playwright/test": "^1.49.1",
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.20",
     "drizzle-kit": "^0.31.10",

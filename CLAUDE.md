@@ -35,6 +35,10 @@ npm run db:studio        # drizzle studio UI
 # single test file / test name
 npx vitest run src/domain/accounts.test.ts
 npx vitest run -t "backfillPreview"
+
+# end-to-end (Playwright) — requires a throwaway Postgres
+npx playwright install chromium                                # first run only
+TEST_DATABASE_URL=postgres://... npm run test:e2e
 ```
 
 Production bundle: `docker compose -f docker-compose.prod.yml up -d --build`.

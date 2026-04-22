@@ -60,6 +60,12 @@ export default async function AccountPage({ params }: { params: Promise<{ id: st
           >
             Backfill
           </Link>
+          <Link
+            href={`/accounts/${account.id}/settings`}
+            className="rounded border border-border bg-surface px-2.5 py-1 text-text-secondary transition-colors duration-120 ease-swift hover:text-text"
+          >
+            Settings
+          </Link>
         </div>
       </div>
 

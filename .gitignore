@@ -24,3 +24,8 @@ next-env.d.ts
 .vscode/
 .idea/
 *.swp
+
+# Playwright
+/playwright-report/
+/test-results/
+/playwright/.cache/
