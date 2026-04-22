@@ -9,8 +9,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Check Register',
-  description: 'Self-hosted personal finance.',
+  title: 'Mincey Family Finances',
+  description: 'Self-hosted family finance ledger.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
