@@ -10,10 +10,10 @@ export function LoginForm() {
 
   return (
     <form action={action} className="space-y-4">
-      <div>
-        <label htmlFor="email" className="mb-1.5 block text-xs text-text-secondary">
+      <label className="block">
+        <span className="mb-1.5 block text-[10px] uppercase tracking-wider text-text-tertiary">
           Email
-        </label>
+        </span>
         <input
           id="email"
           name="email"
@@ -21,23 +21,23 @@ export function LoginForm() {
           required
           autoComplete="username"
           autoFocus
-          className="block w-full rounded border border-border bg-surface px-3 py-2 text-sm shadow-surface outline-none transition-colors duration-120 ease-swift focus:border-accent"
+          className="input"
         />
-      </div>
+      </label>
 
-      <div>
-        <label htmlFor="password" className="mb-1.5 block text-xs text-text-secondary">
+      <label className="block">
+        <span className="mb-1.5 block text-[10px] uppercase tracking-wider text-text-tertiary">
           Password
-        </label>
+        </span>
         <input
           id="password"
           name="password"
           type="password"
           required
           autoComplete="current-password"
-          className="block w-full rounded border border-border bg-surface px-3 py-2 text-sm shadow-surface outline-none transition-colors duration-120 ease-swift focus:border-accent"
+          className="input"
         />
-      </div>
+      </label>
 
       {state.error && (
         <p role="alert" className="text-sm text-debit">
@@ -45,11 +45,7 @@ export function LoginForm() {
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="block w-full rounded bg-accent px-3 py-2 text-sm font-medium text-white transition-opacity duration-120 ease-swift hover:opacity-90 disabled:opacity-60"
-      >
+      <button type="submit" disabled={pending} className="btn-primary w-full">
         {pending ? 'Signing in…' : 'Sign in'}
       </button>
     </form>

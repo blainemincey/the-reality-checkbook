@@ -35,17 +35,17 @@ export default async function InstitutionsSettingsPage() {
       <header className="mb-8">
         <h1 className="text-lg font-medium">Institutions</h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Upload an SVG logo for each institution you use. It replaces the
-          letter tile everywhere the institution appears. SVGs are stored under{' '}
+          Upload an SVG or image logo for each institution. It replaces the
+          letter tile everywhere. Files are stored under{' '}
           <code className="rounded bg-canvas px-1 py-0.5 text-xs">
             public/institutions/
           </code>{' '}
-          and shared across any accounts using the same institution.
+          and shared by any accounts using the same institution.
         </p>
       </header>
 
       {rowsWithLogo.length === 0 ? (
-        <div className="rounded-lg border border-border bg-surface px-6 py-10 text-center text-sm text-text-secondary">
+        <div className="card px-6 py-10 text-center text-sm text-text-secondary">
           No institutions yet. Add one to an account from{' '}
           <a href="/accounts/new" className="text-accent no-underline">
             New account
@@ -57,7 +57,7 @@ export default async function InstitutionsSettingsPage() {
           {rowsWithLogo.map((r) => (
             <li
               key={r.institution}
-              className="flex flex-wrap items-center gap-4 rounded-lg border border-border bg-surface p-4"
+              className="card flex flex-wrap items-center gap-4 p-4"
             >
               <InstitutionBadge
                 institution={r.institution}

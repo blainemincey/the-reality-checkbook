@@ -15,19 +15,16 @@ const ACCOUNT_TYPES: Array<{ value: string; label: string }> = [
 ];
 
 function isoToday(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
 }
-
-const inputClass =
-  'block w-full rounded border border-border bg-surface px-3 py-2 text-sm shadow-surface outline-none transition-colors duration-120 ease-swift focus:border-accent';
 
 export function NewAccountForm() {
   const [state, action, pending] = useActionState(createAccountAction, initial);
   const fe = state.fieldErrors ?? {};
 
   return (
-    <form action={action} className="space-y-5">
+    <form action={action} className="card space-y-5 p-5">
       <Field label="Name" error={fe.name} htmlFor="name">
         <input
           id="name"
@@ -36,7 +33,7 @@ export function NewAccountForm() {
           required
           autoFocus
           placeholder="e.g. Joint Checking"
-          className={inputClass}
+          className="input"
         />
       </Field>
 
@@ -46,7 +43,7 @@ export function NewAccountForm() {
           name="accountType"
           required
           defaultValue="checking"
-          className={inputClass}
+          className="input"
         >
           {ACCOUNT_TYPES.map((t) => (
             <option key={t.value} value={t.value}>
@@ -65,7 +62,7 @@ export function NewAccountForm() {
             inputMode="decimal"
             required
             placeholder="0.00"
-            className={`${inputClass} amount`}
+            className="input amount"
           />
         </Field>
 
@@ -76,7 +73,7 @@ export function NewAccountForm() {
             type="date"
             required
             defaultValue={isoToday()}
-            className={inputClass}
+            className="input"
           />
         </Field>
       </div>
@@ -88,7 +85,7 @@ export function NewAccountForm() {
             name="institution"
             type="text"
             placeholder="e.g. Wells Fargo"
-            className={inputClass}
+            className="input"
           />
         </Field>
 
@@ -100,7 +97,7 @@ export function NewAccountForm() {
             inputMode="numeric"
             maxLength={4}
             placeholder="1234"
-            className={`${inputClass} w-20`}
+            className="input w-20"
           />
         </Field>
       </div>
@@ -112,11 +109,7 @@ export function NewAccountForm() {
       )}
 
       <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded bg-accent px-3 py-2 text-sm font-medium text-white transition-opacity duration-120 ease-swift hover:opacity-90 disabled:opacity-60"
-        >
+        <button type="submit" disabled={pending} className="btn-primary">
           {pending ? 'Creating…' : 'Create & backfill'}
         </button>
       </div>
@@ -137,7 +130,10 @@ function Field({
 }) {
   return (
     <div>
-      <label htmlFor={htmlFor} className="mb-1.5 block text-xs text-text-secondary">
+      <label
+        htmlFor={htmlFor}
+        className="mb-1.5 block text-[10px] uppercase tracking-wider text-text-tertiary"
+      >
         {label}
       </label>
       {children}

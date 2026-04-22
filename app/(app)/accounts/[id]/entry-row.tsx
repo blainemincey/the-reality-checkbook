@@ -107,14 +107,12 @@ export function EntryRow({ accountId, openingDate, payees }: Props) {
   const paymentFocused = state.paymentAmount.length > 0;
 
   return (
-    <section
-      className="rounded-lg border border-border bg-surface shadow-surface"
-      onKeyDown={onKeyDown}
-    >
-      <div className="border-b border-border px-4 py-2">
-        <h2 className="text-xs uppercase tracking-wider text-text-tertiary">
+    <section className="card" onKeyDown={onKeyDown}>
+      <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-text-tertiary">
           New transaction
         </h2>
+        <span className="text-[10px] text-text-tertiary">⌘⏎ to save</span>
       </div>
       <form
         onSubmit={(e) => {

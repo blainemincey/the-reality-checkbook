@@ -139,7 +139,7 @@ export function BackfillWorkspace({ accountId, openingBalance, openingDate }: Pr
           onChange={(e) => setRaw(e.target.value)}
           rows={6}
           placeholder="Date&#9;Payee&#9;Amount&#9;Memo&#10;11/2/2026&#9;Target&#9;-45.67&#9;groceries"
-          className="block w-full rounded border border-border bg-surface px-3 py-2 font-mono text-xs shadow-surface outline-none transition-colors duration-120 ease-swift focus:border-accent"
+          className="input font-mono !text-xs"
         />
         <p className="mt-2 text-xs text-text-tertiary">
           Tab-separated (Google Sheets default) or CSV. First row is auto-detected
@@ -165,7 +165,7 @@ export function BackfillWorkspace({ accountId, openingBalance, openingDate }: Pr
                     onChange={(e) =>
                       setOverrides((o) => ({ ...o, [c.index]: e.target.value as ColumnType }))
                     }
-                    className="rounded border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-accent"
+                    className="input !py-1 !px-2 text-xs"
                   >
                     {COLUMN_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>
@@ -192,7 +192,7 @@ export function BackfillWorkspace({ accountId, openingBalance, openingDate }: Pr
                 {preOpeningCount > 0 && ` · ${preOpeningCount} before opening_date`}
               </span>
             </div>
-            <div className="overflow-hidden rounded border border-border bg-surface shadow-surface">
+            <div className="card overflow-hidden">
               <table className="w-full text-dense">
                 <thead className="border-b border-border text-xs text-text-tertiary">
                   <tr>
@@ -219,6 +219,7 @@ export function BackfillWorkspace({ accountId, openingBalance, openingDate }: Pr
                         <td className="px-3 py-1.5">
                           <input
                             type="checkbox"
+                            className="checkbox"
                             checked={r.include}
                             onChange={(e) =>
                               setRows((prev) =>
@@ -234,6 +235,7 @@ export function BackfillWorkspace({ accountId, openingBalance, openingDate }: Pr
                         <td className="px-3 py-1.5">
                           <input
                             type="checkbox"
+                            className="checkbox"
                             checked={r.cleared}
                             onChange={(e) =>
                               setRows((prev) =>
@@ -281,7 +283,7 @@ export function BackfillWorkspace({ accountId, openingBalance, openingDate }: Pr
           </section>
 
           {/* Math preview */}
-          <section className="rounded border border-border bg-surface px-4 py-4 shadow-surface">
+          <section className="card px-4 py-4">
             <h2 className="mb-3 text-xs uppercase tracking-wider text-text-tertiary">
               Preview
             </h2>
