@@ -6,19 +6,26 @@ Self-hosted personal-finance app. Docker on home server/NAS.
 
 ```bash
 cp .env.example .env
-# edit .env — at minimum set POSTGRES_PASSWORD and SESSION_SECRET
+# edit .env — at minimum set DATABASE_URL and SESSION_SECRET
 
 npm install
-docker compose up -d db
-npm run db:push     # first-time schema push
-npm run dev         # http://localhost:3000
+./scripts/dev.sh start   # postgres (brew) + Next dev server on :3000
+./scripts/dev.sh status  # see what's up
+./scripts/dev.sh stop    # stop dev server; add --all to stop postgres too
+```
+
+First-time user:
+
+```bash
+./scripts/dev.sh migrate   # apply schema against DATABASE_URL
+npm run create-user        # prompts for email + password
 ```
 
 ## Tests
 
 ```bash
-npm test            # one-shot
-npm run test:watch
+npm test                   # vitest unit suite
+./scripts/dev.sh test      # Playwright e2e against a local throwaway postgres
 ```
 
 ## Production (home server)

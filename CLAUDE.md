@@ -13,9 +13,16 @@ The `/design/plan.md` doc (if present) and `memory/project_checkregister.md` hol
 ```bash
 npm install              # install deps (or pnpm if installed — package uses pnpm lockfile format)
 
-# dev loop
-docker compose up -d db  # start Postgres in the background
-npm run dev              # Next.js dev server on :3000
+# dev loop — lifecycle via scripts/dev.sh (postgres + Next dev server in one shot)
+./scripts/dev.sh start    # start postgres (if needed) + dev server
+./scripts/dev.sh status   # state of postgres, test db, dev server, remote DATABASE_URL
+./scripts/dev.sh stop     # stop dev server (add --all to also stop postgres)
+./scripts/dev.sh logs     # tail dev server log
+./scripts/dev.sh test     # Playwright e2e gate against local test db
+./scripts/dev.sh migrate  # drizzle migrate against DATABASE_URL (from .env)
+
+# or the raw commands:
+npm run dev               # Next.js dev server on :3000 (foreground)
 
 # tests
 npm test                 # run vitest once

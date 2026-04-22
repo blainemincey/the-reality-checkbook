@@ -29,3 +29,7 @@ next-env.d.ts
 /playwright-report/
 /test-results/
 /playwright/.cache/
+
+# dev.sh runtime state
+.dev.pid
+.dev.log

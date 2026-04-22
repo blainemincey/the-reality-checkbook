@@ -32,7 +32,12 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run build && npm run start -- -p 3100',
+    // output: 'standalone' produces .next/standalone/server.js — run it
+    // directly rather than via `next start` (which warns against standalone).
+    command:
+      'npm run build && cp -r public .next/standalone/ 2>/dev/null; ' +
+      'cp -r .next/static .next/standalone/.next/ 2>/dev/null; ' +
+      'node .next/standalone/server.js',
     url: baseURL,
     reuseExistingServer: !process.env['CI'],
     timeout: 120_000,
@@ -42,6 +47,7 @@ export default defineConfig({
         process.env['SESSION_SECRET'] ??
         'playwright-test-session-secret-not-for-prod-use',
       NODE_ENV: 'production',
+      PORT: '3100',
     },
   },
 });
