@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { Archive, ArchiveRestore, Check, Pencil, Trash2, X } from 'lucide-react';
 import { Cash, formatCash } from '@/money';
@@ -81,12 +82,22 @@ export function CreditCardRow({ card, archived }: Props) {
 
   return (
     <li className="flex flex-wrap items-center gap-3 px-4 py-3">
-      <InstitutionBadge
-        institution={card.institution}
-        fallback={card.name}
-        size="md"
-        logoFilename={card.logoFilename}
-      />
+      <Link
+        href="/settings/institutions"
+        title={
+          card.institution
+            ? `Manage logo for ${card.institution}`
+            : 'Manage institution logos'
+        }
+        className="rounded-md transition-transform duration-120 ease-swift hover:scale-105"
+      >
+        <InstitutionBadge
+          institution={card.institution}
+          fallback={card.name}
+          size="md"
+          logoFilename={card.logoFilename}
+        />
+      </Link>
 
       {editingIdentity ? (
         <form
