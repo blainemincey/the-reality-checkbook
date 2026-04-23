@@ -16,6 +16,10 @@ a home-server/NAS deployment, talks to your own Postgres, nothing phones home.
 - **Overview dashboard** — net balance, deposits/payments MTD, cleared %,
   uncleared count with oldest-pending hint, top payee MTD, active payees MTD,
   credit balance. Balance-over-time area chart and per-account sparklines.
+- **Reports** — monthly cashflow bar chart (deposits / payments / net), top
+  income sources and top spending payees side-by-side, spending-by-type
+  horizontal bar breakdown. Single period selector (3 / 6 / 12 months or all
+  time) drives every section.
 - **Bootstrap flow** — paste a TSV/CSV export from any spreadsheet, heuristic
   column detection (date/payee/amount/memo/check#/category), live preview of
   the resulting balance before you commit.
