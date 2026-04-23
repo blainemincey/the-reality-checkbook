@@ -2,7 +2,7 @@ import Link from 'next/link';
 import {
   LayoutDashboard,
   ArrowLeftRight,
-  CircleCheck,
+  CreditCard,
   LineChart,
 } from 'lucide-react';
 import { requireAuth } from '@/lib/auth/guards';
@@ -38,9 +38,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 icon={<ArrowLeftRight width={13} height={13} strokeWidth={2} />}
               />
               <NavPill
-                href="/reconcile"
-                label="Reconcile"
-                icon={<CircleCheck width={13} height={13} strokeWidth={2} />}
+                href="/settings/credit-cards"
+                label="Credit cards"
+                icon={<CreditCard width={13} height={13} strokeWidth={2} />}
               />
               <NavPill
                 href="/reports"
