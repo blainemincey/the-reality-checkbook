@@ -28,21 +28,47 @@ npm test                   # vitest unit suite
 ./scripts/dev.sh test      # Playwright e2e against a local throwaway postgres
 ```
 
-## Production (home server)
+## Production (home server / NAS)
+
+External Postgres — set `DATABASE_URL` + `SESSION_SECRET` in `.env` and:
 
 ```bash
-cp .env.example .env && $EDITOR .env
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-The `backup` sidecar runs `scripts/backup.sh` (age-encrypted `pg_dump`) into `./backups/`. Set `AGE_RECIPIENT` to your age public key before relying on it.
-
-## Restore test
+Required env in `.env`:
 
 ```bash
-AGE_IDENTITY=/path/to/age.key \
-DATABASE_URL=postgres://... \
-./scripts/restore.sh ./backups/checkregister-YYYYMMDD.pgdump.age
+DATABASE_URL=postgres://user:pass@your-postgres-host:5432/dbname
+SESSION_SECRET=$(openssl rand -base64 32)
+APP_PORT=3000                 # optional, host port to expose
+```
+
+**At container start** the entrypoint applies any pending migrations against
+`DATABASE_URL` before the server binds :3000. The migrator uses drizzle-orm's
+programmatic runner — no drizzle-kit in the production image.
+
+**First run** — create the initial admin user from the host once the DB is
+migrated. From your dev machine with `DATABASE_URL` set:
+
+```bash
+npm run create-user    # interactive; first user auto-admins
+```
+
+**Uploaded logos** persist via a bind mount at `./public/institutions/` on
+the host. Logos you commit to that directory are visible inside the
+container; new uploads from the UI land on the host filesystem.
+
+## Image
+
+```bash
+docker build -t mincey-finances:latest .
+docker run -d --name mff \
+  -p 3000:3000 \
+  -e DATABASE_URL=postgres://... \
+  -e SESSION_SECRET=... \
+  -v $(pwd)/public/institutions:/app/public/institutions \
+  mincey-finances:latest
 ```
 
 ## Project docs

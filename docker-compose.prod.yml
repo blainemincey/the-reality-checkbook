@@ -1,66 +1,45 @@
-# Production compose for home-server/NAS deployment.
-# Build and run: `docker compose -f docker-compose.prod.yml up -d --build`
+# Production compose for a home-server/NAS deployment.
+# Assumes an external Postgres (e.g. already-running instance on another host).
+#
+# .env must provide:
+#   DATABASE_URL     postgres://user:pass@host:5432/dbname
+#   SESSION_SECRET   openssl rand -base64 32
+#   APP_PORT         host port to expose (default 3000)
+#
+# Bring up:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Migrations apply automatically at container start (see scripts/docker-
+# entrypoint.sh). If they fail, the container exits and Docker will retry per
+# restart policy.
 
 services:
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    networks:
-      - internal
-    # No ports exposed to host — app reaches db over the internal network.
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}']
-      interval: 10s
-      timeout: 3s
-      retries: 10
-
   app:
     build:
       context: .
       dockerfile: Dockerfile
+    image: mincey-finances:latest
     restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      DATABASE_URL: ${DATABASE_URL}
       SESSION_SECRET: ${SESSION_SECRET}
       NODE_ENV: production
-      PORT: '3000'
+      PORT: "3000"
     ports:
-      - '${APP_PORT:-3000}:3000'
-    networks:
-      - internal
-
-  backup:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      PGUSER: ${POSTGRES_USER}
-      PGPASSWORD: ${POSTGRES_PASSWORD}
-      PGDATABASE: ${POSTGRES_DB}
-      PGHOST: db
+      - "${APP_PORT:-3000}:3000"
     volumes:
-      - ./backups:/backups
-      - ./scripts/backup.sh:/usr/local/bin/backup.sh:ro
-    entrypoint: ['/bin/sh', '-c', 'crond -f -l 8']
-    networks:
-      - internal
-    # NOTE: crontab is baked into the image in a real deploy. See scripts/backup.sh
-    # for the intended cron line. Wire it up before relying on it.
-
-networks:
-  internal:
-    driver: bridge
-
-volumes:
-  db_data:
+      # Persist user-uploaded institution logos across image rebuilds. The
+      # host path is created (empty) on first `up` if it doesn't exist; any
+      # logos already committed to the repo's public/institutions/ will be
+      # present if you bring up from the repo checkout.
+      - ./public/institutions:/app/public/institutions
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          node -e "fetch('http://127.0.0.1:3000/login').then(r =>
+          process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 45s

@@ -4,9 +4,26 @@ node_modules
 .env
 .env.local
 .env.*.local
+!.env.example
+
+# Dev/test artifacts — not needed in the production image
 dist
 coverage
+playwright-report
+test-results
+playwright/.cache
+tests
+.claude
 backups
 data
+
+# Runtime scratch
+.dev.pid
+.dev.log
 *.log
+
 .DS_Store
+
+# Sample data that shouldn't leak into the image
+*.xlsx
+image.png
