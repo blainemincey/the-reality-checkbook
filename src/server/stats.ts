@@ -2,6 +2,7 @@ import { and, eq, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { accounts, payees, transactions } from '@/db/schema';
 import { Cash } from '@/money';
+import { creditCardTotal } from './credit-cards';
 
 export interface DashboardStats {
   totalBalance: Cash;
@@ -56,7 +57,6 @@ export async function computeDashboardStats(userId: string): Promise<DashboardSt
   let total = Cash.zero();
   let checking = Cash.zero();
   let savings = Cash.zero();
-  let credit = Cash.zero();
 
   for (const a of accountAgg) {
     const bal = Cash.of(a.opening).add(Cash.of(a.txnSum));
@@ -69,13 +69,14 @@ export async function computeDashboardStats(userId: string): Promise<DashboardSt
       case 'savings':
         savings = savings.add(bal);
         break;
-      case 'credit_card':
-        credit = credit.add(bal);
-        break;
       default:
         break;
     }
   }
+
+  // Credit balance comes from the dedicated credit_cards table (simple
+  // amount-owed tracking, separate from the transaction-level accounts).
+  const credit = await creditCardTotal(userId);
 
   // Txn-level aggregates (all active, any account for this user).
   const [rollup] = await db

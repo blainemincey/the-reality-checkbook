@@ -137,7 +137,11 @@ export default async function OverviewPage() {
           <StatCard
             label="Credit balance"
             value={formatCash(stats.creditBalance)}
-            subtitle={stats.creditBalance.isZero() ? 'no CC accounts' : 'on credit accounts'}
+            subtitle={
+              stats.creditBalance.isZero()
+                ? 'no credit cards yet'
+                : 'total owed across cards'
+            }
             tone={8}
           />
         </section>

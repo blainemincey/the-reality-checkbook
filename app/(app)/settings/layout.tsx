@@ -32,6 +32,14 @@ export default async function SettingsLayout({
               Payees
             </Link>
           </li>
+          <li>
+            <Link
+              href="/settings/credit-cards"
+              className="block rounded px-2 py-1.5 text-text-secondary transition-colors duration-120 ease-swift hover:bg-surface-elevated hover:text-text"
+            >
+              Credit cards
+            </Link>
+          </li>
           {isAdmin && (
             <li>
               <Link

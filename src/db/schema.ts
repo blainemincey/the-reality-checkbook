@@ -295,6 +295,41 @@ export const payeesRelations = relations(payees, ({ one }) => ({
 
 export type PayeeRow = typeof payees.$inferSelect;
 
+// ---------------------------------------------------------------------------
+// Credit cards — separate from `accounts` because we only track the
+// outstanding balance + when it was updated, not individual transactions.
+// The dashboard's Credit rollup reads from this table.
+// ---------------------------------------------------------------------------
+
+export const creditCards = pgTable(
+  'credit_cards',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    institution: text('institution'),
+    last4: char('last4', { length: 4 }),
+    amountOwed: numeric('amount_owed', { precision: 19, scale: 4 })
+      .notNull()
+      .default('0'),
+    lastUpdatedAt: timestamp('last_updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    isArchived: boolean('is_archived').notNull().default(false),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('credit_cards_user_id_idx').on(t.userId)],
+);
+
+export type CreditCardRow = typeof creditCards.$inferSelect;
+
+export const creditCardsRelations = relations(creditCards, ({ one }) => ({
+  user: one(users, { fields: [creditCards.userId], references: [users.id] }),
+}));
+
 export const reconciliationsRelations = relations(reconciliations, ({ one, many }) => ({
   account: one(accounts, { fields: [reconciliations.accountId], references: [accounts.id] }),
   transactions: many(transactions),

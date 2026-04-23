@@ -64,6 +64,13 @@
       "when": 1776886066657,
       "tag": "0008_add_name_login_tracking",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1776893251487,
+      "tag": "0009_add_credit_cards",
+      "breakpoints": true
     }
   ]
 }
