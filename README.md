@@ -1,4 +1,4 @@
-# Mincey Family Finances
+# The Reality Checkbook
 
 A self-hosted personal/household finance app — check register, cross-account
 unified ledger, credit-card tracking, and a dashboard over it all. Built for

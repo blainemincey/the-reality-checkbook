@@ -146,7 +146,7 @@ export async function importInstitutionLogoFromUrlAction(
       redirect: 'follow',
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       headers: {
-        'User-Agent': 'check-register-logo-import/1.0',
+        'User-Agent': 'the-reality-checkbook-logo-import/1.0',
         Accept: 'image/svg+xml,image/png,image/jpeg,image/webp,image/gif;q=0.9,*/*;q=0.5',
       },
     });

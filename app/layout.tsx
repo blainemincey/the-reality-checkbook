@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Mincey Family Finances',
+  title: 'The Reality Checkbook',
   description: 'Self-hosted family finance ledger.',
 };
 

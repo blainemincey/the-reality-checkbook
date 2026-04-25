@@ -8,7 +8,7 @@ export default async function LoginPage() {
       <div className="w-full max-w-sm">
         <header className="mb-6 flex items-center gap-2 text-sm font-semibold tracking-tight">
           <span className="inline-block h-2 w-2 rounded-full bg-accent shadow-[0_0_14px_rgb(var(--color-accent)/0.7)]" />
-          Mincey Family Finances
+          The Reality Checkbook
         </header>
         <div className="card p-6">
           <h1 className="text-lg font-semibold">Sign in</h1>

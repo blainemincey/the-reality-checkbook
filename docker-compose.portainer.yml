@@ -4,7 +4,7 @@
 #
 # In Portainer:
 #   1. Stacks -> Add stack -> Repository
-#         Repository URL:    https://github.com/blainemincey/mincey-family-finances
+#         Repository URL:    https://github.com/blainemincey/the-reality-checkbook
 #         Compose path:      docker-compose.portainer.yml
 #         Enable GitOps updates (poll) or use a webhook.
 #   2. Environment variables (set in the stack UI, not committed):
@@ -18,7 +18,7 @@
 
 services:
   app:
-    image: ghcr.io/blainemincey/mincey-family-finances:${IMAGE_TAG:-latest}
+    image: ghcr.io/blainemincey/the-reality-checkbook:${IMAGE_TAG:-latest}
     pull_policy: always
     restart: unless-stopped
     environment:

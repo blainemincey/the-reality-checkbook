@@ -24,7 +24,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               className="flex items-center gap-2 py-4 text-sm font-semibold tracking-tight text-chrome-text no-underline"
             >
               <span className="inline-block h-2 w-2 rounded-full bg-accent shadow-[0_0_12px_rgb(var(--color-accent)/0.6)]" />
-              Mincey Family Finances
+              The Reality Checkbook
             </Link>
             <nav className="hidden items-center gap-1 md:flex">
               <NavPill
