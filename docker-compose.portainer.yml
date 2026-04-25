@@ -17,6 +17,10 @@
 #                                 in production is Secure-flag on, which means
 #                                 browsers ignore the cookie over HTTP and the
 #                                 user gets bounced to /login after sign-in.
+#         PROXY_NETWORK           name of the external Docker network shared
+#                                 with the reverse proxy (e.g. Nginx Proxy
+#                                 Manager). Leave unset for direct host-port
+#                                 access only.
 #   3. Pull the image once before first deploy if GHCR package is private.
 #
 # Migrations run automatically at container start (scripts/docker-entrypoint.sh).
@@ -56,6 +60,18 @@ services:
       timeout: 5s
       retries: 3
       start_period: 45s
+    # The app is reachable from the reverse proxy (e.g. Nginx Proxy Manager)
+    # at http://app:3000 over the shared external network named by
+    # PROXY_NETWORK. The stack-local `default` network is kept for any future
+    # in-stack services.
+    networks:
+      - default
+      - proxy
+
+networks:
+  proxy:
+    external: true
+    name: ${PROXY_NETWORK}
 
 volumes:
   institutions:
