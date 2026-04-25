@@ -8,10 +8,15 @@
 #         Compose path:      docker-compose.portainer.yml
 #         Enable GitOps updates (poll) or use a webhook.
 #   2. Environment variables (set in the stack UI, not committed):
-#         DATABASE_URL       postgres://user:pass@host:5432/dbname
-#         SESSION_SECRET     openssl rand -base64 32
-#         APP_PORT           host port to expose (default 3000)
-#         IMAGE_TAG          latest  (or pin to sha-abcdef1 for rollback)
+#         DATABASE_URL            postgres://user:pass@host:5432/dbname
+#         SESSION_SECRET          openssl rand -base64 32
+#         APP_PORT                host port to expose (default 3000)
+#         IMAGE_TAG               latest  (or pin to sha-abcdef1 for rollback)
+#         SESSION_COOKIE_SECURE   "false" only when serving plain HTTP on a
+#                                 trusted LAN (no reverse-proxy TLS). Default
+#                                 in production is Secure-flag on, which means
+#                                 browsers ignore the cookie over HTTP and the
+#                                 user gets bounced to /login after sign-in.
 #   3. Pull the image once before first deploy if GHCR package is private.
 #
 # Migrations run automatically at container start (scripts/docker-entrypoint.sh).
@@ -24,6 +29,7 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       SESSION_SECRET: ${SESSION_SECRET}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
       NODE_ENV: production
       PORT: "3000"
     ports:
