@@ -10,7 +10,6 @@
 #   2. Environment variables (set in the stack UI, not committed):
 #         DATABASE_URL            postgres://user:pass@host:5432/dbname
 #         SESSION_SECRET          openssl rand -base64 32
-#         APP_PORT                host port to expose (default 3000)
 #         IMAGE_TAG               latest  (or pin to sha-abcdef1 for rollback)
 #         SESSION_COOKIE_SECURE   "false" only when serving plain HTTP on a
 #                                 trusted LAN (no reverse-proxy TLS). Default
@@ -36,8 +35,9 @@ services:
       SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-true}
       NODE_ENV: production
       PORT: "3000"
-    ports:
-      - "${APP_PORT:-3000}:3000"
+    # No host port published. The app is reachable only through the reverse
+    # proxy on PROXY_NETWORK at http://app:3000. To expose a host port for
+    # direct/emergency access, add a `ports: ["${APP_PORT:-3000}:3000"]` block.
     # Postgres runs on the NAS host, not in a container. host-gateway resolves
     # `host.docker.internal` to the Docker bridge IP of the host so the app can
     # reach it. DATABASE_URL should use `host.docker.internal` as the hostname.
