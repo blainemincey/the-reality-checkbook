@@ -28,6 +28,11 @@ services:
       PORT: "3000"
     ports:
       - "${APP_PORT:-3000}:3000"
+    # Postgres runs on the NAS host, not in a container. host-gateway resolves
+    # `host.docker.internal` to the Docker bridge IP of the host so the app can
+    # reach it. DATABASE_URL should use `host.docker.internal` as the hostname.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       # Named volume so the stack is independent of Portainer's working dir.
       # Logos baked into the image (public/institutions/*) are copied in on
