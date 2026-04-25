@@ -2,10 +2,12 @@
 # Lifecycle for local dev services: Postgres (brew) and Next dev server.
 # One command each, so you don't have to remember brew/npm/lsof invocations.
 #
-#   scripts/dev.sh start        start postgres (if needed) + dev server
+#   scripts/dev.sh start [PORT] start postgres (if needed) + dev server
+#                               (PORT defaults to $APP_PORT or 3000;
+#                                also accepts --port PORT or -p PORT)
 #   scripts/dev.sh stop         stop the dev server
 #   scripts/dev.sh stop --all   also stop postgres
-#   scripts/dev.sh restart      stop then start
+#   scripts/dev.sh restart [PORT] stop then start (port forwarded to start)
 #   scripts/dev.sh status       state of each service + remote db reachability
 #   scripts/dev.sh logs         tail dev server log
 #   scripts/dev.sh test [...]   run the Playwright e2e gate on the test db
@@ -20,11 +22,13 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
 PID_FILE="$REPO_ROOT/.dev.pid"
+PORT_FILE="$REPO_ROOT/.dev.port"
 LOG_FILE="$REPO_ROOT/.dev.log"
 PG_FORMULA="postgresql@16"
 PG_BIN="/opt/homebrew/opt/$PG_FORMULA/bin"
 TEST_DB="checkregister_test"
-DEV_PORT="${APP_PORT:-3000}"
+DEFAULT_PORT="${APP_PORT:-3000}"
+DEV_PORT="$DEFAULT_PORT"
 
 if [[ -t 1 ]]; then
   c_reset=$'\033[0m'; c_dim=$'\033[2m'; c_bold=$'\033[1m'
@@ -94,7 +98,52 @@ ensure_test_db() {
   fi
 }
 
+valid_port() {
+  [[ "$1" =~ ^[0-9]+$ ]] && (( $1 > 0 && $1 < 65536 ))
+}
+
+# Port the running dev server (if any) bound to; falls back to $DEV_PORT.
+effective_port() {
+  if [[ -f "$PORT_FILE" ]]; then
+    cat "$PORT_FILE"
+  else
+    printf "%s" "$DEV_PORT"
+  fi
+}
+
+# Parses optional port args for `start` / `restart`.
+# Accepts: bare number (e.g. 3001), --port N, --port=N, -p N.
+# On success, sets DEV_PORT. On bad input, prints an error and returns 2.
+parse_port_args() {
+  while (( $# > 0 )); do
+    case "$1" in
+      -p|--port)
+        shift
+        if [[ -z "${1:-}" ]]; then err "missing value for --port"; return 2; fi
+        if ! valid_port "$1"; then err "invalid port: $1"; return 2; fi
+        DEV_PORT="$1"
+        ;;
+      --port=*)
+        local v="${1#--port=}"
+        if ! valid_port "$v"; then err "invalid port: $v"; return 2; fi
+        DEV_PORT="$v"
+        ;;
+      *)
+        if valid_port "$1"; then
+          DEV_PORT="$1"
+        else
+          err "unknown argument: $1"
+          return 2
+        fi
+        ;;
+    esac
+    shift
+  done
+}
+
 cmd_start() {
+  parse_port_args "$@" || return $?
+
   ensure_pg_bin
 
   local state
@@ -109,7 +158,7 @@ cmd_start() {
   fi
 
   if dev_pid >/dev/null; then
-    ok "dev server already running (pid $(dev_pid))"
+    ok "dev server already running (pid $(dev_pid) on :$(effective_port))"
     return 0
   fi
 
@@ -118,13 +167,14 @@ cmd_start() {
     return 1
   fi
 
-  msg "starting dev server… (logs: .dev.log)"
+  msg "starting dev server on :${DEV_PORT}… (logs: .dev.log)"
   load_env
   : > "$LOG_FILE"
   # nohup + background + disown so it survives this shell.
-  nohup npm run dev >> "$LOG_FILE" 2>&1 &
+  nohup npm run dev -- --port "$DEV_PORT" >> "$LOG_FILE" 2>&1 &
   local pid=$!
   echo "$pid" > "$PID_FILE"
+  echo "$DEV_PORT" > "$PORT_FILE"
   disown "$pid" 2>/dev/null || true
 
   local deadline=$((SECONDS + 60))
@@ -145,11 +195,13 @@ cmd_start() {
 
 cmd_stop() {
   local opt="${1:-}"
+  local stop_port
+  stop_port=$(effective_port)
 
   if dev_pid >/dev/null; then
     local pid
     pid=$(dev_pid)
-    msg "stopping dev server (pid $pid)…"
+    msg "stopping dev server (pid ${pid} on :${stop_port})…"
     pkill -P "$pid" 2>/dev/null || true
     kill "$pid" 2>/dev/null || true
     local deadline=$((SECONDS + 5))
@@ -163,11 +215,12 @@ cmd_stop() {
 
   # Belt-and-braces: if the port is still bound (orphaned child), knock it off.
   local lingering
-  lingering=$(port_pid "$DEV_PORT" || true)
+  lingering=$(port_pid "$stop_port" || true)
   if [[ -n "$lingering" ]]; then
-    warn "port $DEV_PORT still bound by pid $lingering — killing"
+    warn "port $stop_port still bound by pid $lingering — killing"
     kill "$lingering" 2>/dev/null || true
   fi
+  rm -f "$PORT_FILE"
 
   if [[ "$opt" == "--all" ]]; then
     local state
@@ -184,7 +237,7 @@ cmd_stop() {
 
 cmd_restart() {
   cmd_stop
-  cmd_start
+  cmd_start "$@"
 }
 
 cmd_status() {
@@ -218,13 +271,14 @@ cmd_status() {
   fi
 
   if dev_pid >/dev/null; then
-    local pid port_bound
+    local pid port_bound status_port
     pid=$(dev_pid)
-    port_bound=$(port_pid "$DEV_PORT" || true)
+    status_port=$(effective_port)
+    port_bound=$(port_pid "$status_port" || true)
     if [[ "$port_bound" == "$pid" || -n "$port_bound" ]]; then
-      ok "dev       ${c_dim}pid $pid on :$DEV_PORT${c_reset}"
+      ok "dev       ${c_dim}pid $pid on :$status_port${c_reset}"
     else
-      warn "dev       ${c_dim}pid $pid alive but :$DEV_PORT not bound yet${c_reset}"
+      warn "dev       ${c_dim}pid $pid alive but :$status_port not bound yet${c_reset}"
     fi
   else
     err "dev       ${c_dim}stopped${c_reset}"
@@ -301,14 +355,21 @@ usage() {
   cat <<'EOF'
 Lifecycle for local dev services: Postgres (brew) and Next dev server.
 
-  scripts/dev.sh start        start postgres (if needed) + dev server
-  scripts/dev.sh stop         stop the dev server
-  scripts/dev.sh stop --all   also stop postgres
-  scripts/dev.sh restart      stop then start
-  scripts/dev.sh status       state of each service + remote db reachability
-  scripts/dev.sh logs         tail dev server log
-  scripts/dev.sh test [...]   run the Playwright e2e gate on the test db
-  scripts/dev.sh migrate      drizzle migrate against DATABASE_URL (.env)
+  scripts/dev.sh start [PORT]   start postgres (if needed) + dev server
+                                PORT defaults to $APP_PORT or 3000;
+                                also accepts --port PORT or -p PORT
+  scripts/dev.sh stop           stop the dev server
+  scripts/dev.sh stop --all     also stop postgres
+  scripts/dev.sh restart [PORT] stop then start (port forwarded to start)
+  scripts/dev.sh status         state of each service + remote db reachability
+  scripts/dev.sh logs           tail dev server log
+  scripts/dev.sh test [...]     run the Playwright e2e gate on the test db
+  scripts/dev.sh migrate        drizzle migrate against DATABASE_URL (.env)
+
+Examples:
+  scripts/dev.sh start 3001
+  scripts/dev.sh start --port 4000
+  scripts/dev.sh restart -p 3002
 
 Production (NAS) uses Docker Compose; see docker-compose.prod.yml.
 EOF
