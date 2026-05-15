@@ -110,7 +110,28 @@ The Playwright gate runs the full bootstrap narrative: login → create account
 
 ## Production deployment
 
-External Postgres, Docker Compose:
+### Portainer / home NAS (recommended)
+
+A prebuilt image is published to GHCR on every push to `main`. On your NAS,
+point a Portainer stack at this repo using `docker-compose.portainer.yml` and
+set these environment variables in the Portainer UI (do not commit them):
+
+| Variable | Required | Notes |
+|---|---|---|
+| `DATABASE_URL` | yes | `postgres://user:pass@host.docker.internal:5432/dbname` — use `host.docker.internal` if Postgres runs on the NAS host |
+| `SESSION_SECRET` | yes | `openssl rand -base64 32` |
+| `IMAGE_TAG` | no | `latest` (default) or pin to a `sha-` digest for rollback |
+| `SESSION_COOKIE_SECURE` | no | Set to `"false"` only when serving plain HTTP on a trusted LAN with no TLS termination. Defaults to `true` (Secure flag on); browsers will drop the cookie over plain HTTP and bounce every login. |
+| `PROXY_NETWORK` | no | External Docker network shared with your reverse proxy (e.g. Nginx Proxy Manager). Leave unset if accessing by host port directly. |
+
+The app container does **not** publish a host port by default; it is reachable
+through the reverse proxy at `http://app:3000` on `PROXY_NETWORK`. Migrations
+run automatically at container start.
+
+Enable GitOps polling or webhook updates in Portainer to deploy new images
+automatically on push.
+
+### Build-from-source (Docker Compose)
 
 ```bash
 cat > .env <<'EOF'
@@ -122,16 +143,6 @@ EOF
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-At container start the entrypoint runs pending migrations before the server
-binds. No drizzle-kit in the production image — the migrator uses
-`drizzle-orm`'s programmatic runner.
-
-**Create your first admin user** (from a dev machine with `DATABASE_URL` set):
-
-```bash
-npm run create-user
-```
-
 **Updates:**
 
 ```bash
@@ -139,8 +150,16 @@ git pull
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-Uploaded institution logos persist via a bind mount at
-`./public/institutions/` on the host.
+Uploaded institution logos persist in a named Docker volume (`institutions`)
+shared across deploys.
+
+### First admin user
+
+From any machine with `DATABASE_URL` set:
+
+```bash
+npm run create-user
+```
 
 ## Data model highlights
 

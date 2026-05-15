@@ -129,7 +129,7 @@ export function Combobox({
         autoComplete="off"
         value={value}
         onChange={onInputChange}
-        onFocus={() => setOpen(true)}
+        onFocus={(e) => { if (e.relatedTarget !== null) setOpen(true); }}
         onKeyDown={onKeyDown}
         placeholder={placeholder}
         disabled={disabled}

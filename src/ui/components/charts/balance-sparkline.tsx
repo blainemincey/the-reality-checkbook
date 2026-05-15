@@ -1,6 +1,6 @@
 'use client';
 
-import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
+import { AreaChart, Area, YAxis } from 'recharts';
 import type { BalancePoint } from '@/domain/charts';
 
 interface Props {
@@ -29,20 +29,18 @@ export function BalanceSparkline({ data, width = 96, height = 28, trend = 'flat'
       aria-hidden
       className="shrink-0"
     >
-      <ResponsiveContainer width={width} height={height}>
-        <AreaChart data={[...data]} margin={{ top: 2, right: 0, bottom: 2, left: 0 }}>
-          <YAxis hide domain={['dataMin', 'dataMax']} />
-          <Area
-            type="monotone"
-            dataKey="balance"
-            stroke={stroke}
-            strokeWidth={1.5}
-            fill={stroke}
-            fillOpacity={0.12}
-            isAnimationActive={false}
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+      <AreaChart width={width} height={height} data={[...data]} margin={{ top: 2, right: 0, bottom: 2, left: 0 }}>
+        <YAxis hide domain={['dataMin', 'dataMax']} />
+        <Area
+          type="monotone"
+          dataKey="balance"
+          stroke={stroke}
+          strokeWidth={1.5}
+          fill={stroke}
+          fillOpacity={0.12}
+          isAnimationActive={false}
+        />
+      </AreaChart>
     </span>
   );
 }

@@ -89,7 +89,7 @@ export function CashflowChart({ data, height = 260 }: Props) {
 
   return (
     <div style={{ height }}>
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
         <BarChart data={[...data]} margin={{ top: 6, right: 8, bottom: 6, left: 8 }}>
           <CartesianGrid
             stroke="rgb(var(--color-border))"
